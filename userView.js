@@ -7,17 +7,17 @@
 ////
 
 function UserView(canID) {
-    this.io        = require("socket.io");
+
     this.canvas    = document.getElementById(canID)
-    this.context   = canvas.getContext("2d");
-    this.sizeX     = canvas.width;
-    this.sizeY     = canvas.height;
-    this.gridSpace = ( sizeX < sizeY ) ? sizeX : sizeY;
-    this.startX    = (sizeX - gridSpace) / 2;
-    this.startY    = (sizeY - gridSpace) / 2;
+    this.context   = this.canvas.getContext("2d");
+    this.sizeX     = this.canvas.width;
+    this.sizeY     = this.canvas.height;
+    this.gridSpace = ( this.sizeX < this.sizeY ) ? this.sizeX : this.sizeY;
+    this.startX    = (this.sizeX - this.gridSpace) / 2;
+    this.startY    = (this.sizeY -this.gridSpace) / 2;
 
     this.gridCount = 19;
-    this.gridSize  = gridSpace;
+    this.gridSize  = this.gridSpace;
 
     ////dynamizeMe
     this.bgColor      = "#ffffff";
@@ -31,7 +31,7 @@ function UserView(canID) {
 
 //get dots from control
 // package model on server ;)
-UserView.render   = function( dots ) {
+UserView.prototype.render   = function( dots ) {
 
     this.context.fillColor = this.bgColor;
     this.context.fillRect(0, 0, this.sizeX, this.sizeY);
@@ -41,7 +41,7 @@ UserView.render   = function( dots ) {
 }
 
 
-UserView.drawGrid = function(  ) {
+UserView.prototype.drawGrid = function(  ) {
     this.context.strokeStyle = this.gridColor;
     this.context.beginPath();
     for(var i = 0; i < gridCount; i++) {
@@ -55,7 +55,7 @@ UserView.drawGrid = function(  ) {
     }
 }
 
-UserView.drawDots = function( dots ) {
+UserView.prototype.drawDots = function( dots ) {
 
     //dots is an object of lists of touples
     this.context.beginPath();
@@ -71,8 +71,10 @@ UserView.drawDots = function( dots ) {
 
 
 function UserControl(   ) {
-    this.io   = require('socket.io');
-    this.view = new UserView( );
+
+    this.view = new UserView( 'gameCanvas');
+    this.view.render( );
+
     this.io.on('connection', function(socket) {
 
         socket.on('play made', function( dots ) {
@@ -84,4 +86,8 @@ function UserControl(   ) {
 
     });
 
+}
+
+window.onload = function( ) {
+    cont = new UserControl();
 }
