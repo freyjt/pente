@@ -31,7 +31,7 @@ function UserView(canID) {
 
 //get dots from control
 // package model on server ;)
-UserView.prototype.render   = function( dots ) {
+UserView.prototype.render  = function( dots ) {
 
     this.context.fillColor = this.bgColor;
     this.context.fillRect(0, 0, this.sizeX, this.sizeY);
@@ -44,7 +44,9 @@ UserView.prototype.render   = function( dots ) {
 UserView.prototype.drawGrid = function(  ) {
     this.context.strokeStyle = this.gridColor;
     this.context.beginPath();
+
     for(var i = 0; i < gridCount; i++) {
+    
         this.context.moveTo(startX, startY + i * gridSize);
         this.context.lineTo(sizeX - startX, startY + i * gridSize);
         this.context.stroke();
@@ -52,6 +54,7 @@ UserView.prototype.drawGrid = function(  ) {
         this.context.moveTo(startX + i * gridSize , startY);
         this.context.lineTo(startX + i * gridSize , sizeY - startY);
         this.context.stroke();
+    
     }
 }
 
