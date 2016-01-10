@@ -51,8 +51,10 @@ UserView.prototype.render  = ( dots, turnDot, caller ) => {
     caller.drawDots( dots, turnDot );
 
 }
-UserView.prototype.renderText = (textString) => {
-
+UserView.prototype.renderText = (textString, caller) => {
+    caller.context.globalAlpha = .5;
+    caller.context.fillStyle = 'red';
+    caller.context.fillRect(0,0, caller.sizeX, caller.sizeY);
 }
 
 UserView.prototype.drawGrid = ( caller ) => {
@@ -127,6 +129,7 @@ UserView.prototype.transMouseToGrid = ( mouse, caller) => {
 function UserControl(   ) {
     this.view  = new UserView( 'gameCanvas', this);
     this.model = new UserModel(  );
+    this.roomName = "";
     this.io    = io();
     var this_closure = this;
 
@@ -138,9 +141,28 @@ function UserControl(   ) {
             this_closure.view.render( this_closure.model.getMoves() );
 
         });
+        socket.on('join room', function( payload ) {
+            payload = JSON.parse(payload);
+            this_closure.setRoomName( payload.roomName, this_closure );
+        });
+        socket.on('join-error', function( error ) {
+            this_closure.view.renderText( error );
+        });
+
 
     });
-
+    //Really affecting binding here soooo....do better
+    var join_button = document.getElementById('roomJoin');
+    join_button.onclick = function(evt) {
+        var payload        = {};
+        payload.roomName   = document.getElementById('whichRoom').value;
+        if( payload.roomName.length > 0) {
+            payload.passPhrase = document.getElementById('passPhrase').value;
+            this_closure.packageAndShip('room join', payload, this_closure );
+        } else {
+            document.getElementById('whichRoom').value = "Must select room name.";
+        }
+    }
     this.renderView(undefined, this);
 }
 UserControl.prototype.renderView = ( newMove, caller ) => {
@@ -155,6 +177,9 @@ UserControl.prototype.renderView = ( newMove, caller ) => {
     } else {
         caller.view.render(moves, undefined, caller.view);
     }
+}
+UserControl.prototype.setRoomName = ( nameIn, caller ) => {
+    caller.roomName = nameIn;
 }
 UserControl.prototype.checkCollisions = ( moves, newMove ) => {
     var doesCollide = false
@@ -179,7 +204,11 @@ UserControl.prototype.makeMove = (movePlacement, caller) => {
         caller.io.emit("play made", JSON.stringify(movePlacement));
     }
 }
-
+UserControl.prototype.packageAndShip = ( event, payload, controlObject ) => {
+    if(typeof(payload.roomName) === 'undefined')
+        payload.roomName = controlObject.roomName;
+    controlObject.io.emit(event, JSON.stringify(payload) );
+}
 
 
 
@@ -191,9 +220,6 @@ function UserModel(  ) {
 UserModel.prototype.getMoves = (  ) => {
     return [ this.playerOne, this.playerTwo ];
 }
-
-
-
 
 
 

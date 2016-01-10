@@ -32,17 +32,34 @@ function penteServer( ) {
         });
 
         socket.on('room join', function(payload) {
-            var info = JSON.parse(payload);
-            if(typeof(openGames[info.gameRoom]) !== "undefined"
-                && openGames[info.gameRoom].numberPlaying < 2) {
-                openGames[info.gameRoom].addPlayer( info.playerId );
-            } else if(typeof(openGames[info.gameRoom]) !== "undefined"
-                && openGames[info.gameRoom].numberPlaying >= 2) {
+            console.log(payload);
+            var payload = JSON.parse(payload);
+            console.log("::" + payload);
+            console.log("roomName    " + payload.roomName);
+
+            if(typeof(openGames[payload["roomName"]]) !== "undefined"
+                && openGames[payload.roomName].numberPlaying < 2) {
+
+                if(openGames[payload.roomName].passPhrase === payload.passPhrase){
+                    openGames[payload.roomName].addPlayer( payload.playerId );
+                } else {
+               //     socket.emit('join-error', "Wrong passPhrase!");
+                }
+                console.log( openGames );
+            } else if(typeof(openGames[payload.roomName]) !== "undefined"
+                && openGames[payload.roomName].numberPlaying >= 2) {
             
-                this.emit('error', "Too many playing in that room!");
+              //  socket.emit('join-error', "Too many playing in that room!");
 
             } else {
-                openGames[info.gameRoom] = new GameState( info.gameRoom, info.playerId );
+                openGames[payload.roomName] = new GameState( payload.roomName, payload.playerId );
+                
+                if(typeof(payload.passPhrase) !== 'undefined'
+                    && payload.passPhrase.length > 0) {
+                    openGames[payload.roomName].setPassPhrase(payload.passPhrase);
+                }
+
+                console.log(openGames);
             }
         });
 
@@ -52,11 +69,16 @@ function penteServer( ) {
 
 } penteServer( );
 
+
+
 function GameState( roomName, player1) {
     this.roomName   = roomName;
-    this.playerOne  = player1;
+    if(typeof(player1) !== 'undefined')
+        this.playerOne  = player1;
+    else this.playerOne = "player1";
+    this.playerTwo  = "";
     this.whosTurn   = true; //easier to flip
-    this.
+    this.passPhrase = "";
 }
 GameState.prototype.addPlayer = ( playerName ) => {
     if(typeof(this.playerOne) === 'undefined') {
@@ -64,4 +86,10 @@ GameState.prototype.addPlayer = ( playerName ) => {
     } else if(typeof(this.playerTwo) === 'undefined') {
         this.playerTwo = playerName;
     }
+}
+GameState.prototype.setPassPhrase = ( passIn ) => {
+    this.passPhrase = passIn;
+}
+GameState.prototype.validateMove  = ( moveIn ) => {
+
 }

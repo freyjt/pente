@@ -6,8 +6,13 @@
 
     <body>
         <canvas id="gameCanvas" height="500px" width="500px" style="border: 1px solid black;">Your browser does not support the Canvas object!!!!</canvas>
-        <input type="text" id="roomJoin" placeholder="Room Name"/>
-        <button>Join Room</button>
+        <table id="joinPanel">
+            <tr>
+                <td><input type="text" id="whichRoom" placeholder="Room Name"/></td>
+                <td><button id="roomJoin">Join Room</button></td>
+            </tr>
+            <tr>
+                <td><input type="text" id="passPhrase" placeholder="Pass Phrase"/></td>
     </body>
     <script src="/socket.io/socket.io.js"></script>
 
