@@ -28,48 +28,46 @@ function UserView(canID, initControlObject) {
     this.canvas.addEventListener("mousemove", function(evt) {
 
         pos = getMousePosition(evt);
-        pos = registrantThis.transMouseToGrid( pos );
-        registrantThis.renderView( pos );
+        console.log(pos);
+        pos = registrantThis.transMouseToGrid( pos, registrantThis);
         console.log( pos );
+
+        registrantThis.control.renderView( pos, registrantThis.control);
+        
 
     });
 
 }
 
-
 //get dots from control
 // package model on server ;)
-UserView.prototype.render  = ( dots, turnDot ) => {
+UserView.prototype.render  = ( dots, turnDot, caller ) => {
 
-    this.context.fillStyle = this.bgColor;
-    this.context.fillRect(0, 0, this.sizeX, this.sizeY);
+    caller.context.fillStyle = caller.bgColor;
+    caller.context.fillRect(0, 0, caller.sizeX, caller.sizeY);
 
-    this.drawGrid( );
-    this.drawDots( dots, turnDot );
+    caller.drawGrid( caller );
+    caller.drawDots( dots, turnDot );
+
+}
+UserView.prototype.renderText = (textString) => {
 
 }
 
+UserView.prototype.drawGrid = ( caller ) => {
+    caller.context.strokeStyle = caller.gridColor;
+    caller.context.lineWidth   = 3; //exaggerated for visibility at the (literal) edge
+    caller.context.beginPath();
 
-UserView.prototype.drawGrid = (  ) => {
-    this.context.strokeStyle = this.gridColor;
-    this.context.lineWidth   = 3; //exaggerated for visibility at the (literal) edge
-    this.context.beginPath();
+    for(var i = 0; i < caller.gridCount + 1; i++) {
 
-    for(var i = 0; i < this.gridCount + 1; i++) {
-
-        this.context.beginPath();
-        this.context.moveTo(this.startX,              this.startY + i * this.gridSize);
-        this.context.lineTo(this.sizeX - this.startX, this.startY + i * this.gridSize);
-        this.context.stroke();
-
-        this.context.beginPath();
-        this.context.moveTo(this.startX + i * this.gridSize , this.startY);
-        this.context.lineTo(this.startX + i * this.gridSize , this.sizeY - this.startY);
-        console.log( this.gridSize );
-        this.context.stroke();
+        caller.context.moveTo(caller.startX,              caller.startY + i * caller.gridSize);
+        caller.context.lineTo(caller.sizeX - caller.startX, caller.startY + i * caller.gridSize);
+        caller.context.moveTo(caller.startX + i * caller.gridSize , caller.startY);
+        caller.context.lineTo(caller.startX + i * caller.gridSize , caller.sizeY - caller.startY);
 
     }
-    this.context.stroke();
+    caller.context.stroke();
 }
 //@todo change this to accept a gamestate object
 UserView.prototype.drawDots = function( dots, playerMove ) {
@@ -79,14 +77,10 @@ UserView.prototype.drawDots = function( dots, playerMove ) {
         this.context.beginPath();
         for(var i = 0; i < dots.length; i++) {
             this.context.fillStyle = this.playerColors[i];
-            for(var j = 0; j < dots[i].length; j++) {
-                /*
-                    
-                    CODE TO DRAW DOTS
-
-                */
-                this.drawToken( dots[i][j] );
-            }
+            if(typeof(dots[i]) !== 'undefined')
+                for(var j = 0; j < dots[i].length; j++) {
+                    this.drawToken( dots[i][j] );
+                }
         }
     }
     if( typeof(playerMove) !== 'undefined' ) {
@@ -112,44 +106,77 @@ UserView.prototype.getDrawCenter = ( tokenIn ) => {
     var yVal = this.startY + tokenIn.y * this.gridSize;
     return {x: xVal, y: yVal};
 }
-UserView.prototype.transMouseToGrid = ( mouse ) => {
+UserView.prototype.transMouseToGrid = ( mouse, caller) => {
 
-    var halfGrid = this.gridSize / 2;
-    //this is true iff we have a square board @TODO we need to offset
+    var halfGrid = caller.gridSize / 2;
+    //caller is true iff we have a square board @TODO we need to offset
     //  mouse and size?
-    var X = Math.floor( this.gridCount * (mouse.x + halfGrid) / this.sizeX);
-    var Y = Math.floor( this.gridCount * (mouse.y + halfGrid) / this.sizeY);
-
+    var X = Math.floor( caller.gridCount * (mouse.x + halfGrid) / caller.sizeX);
+    var Y = Math.floor( caller.gridCount * (mouse.y + halfGrid) / caller.sizeY);
+    console.log( mouse.x + " : " + X );
     return {x: X, y: Y};
 }
 
-function UserControl(   ) {
 
+
+function UserControl(   ) {
     this.view  = new UserView( 'gameCanvas', this);
-    this.view.render( );
-    this.model = new UserModel();
+    this.model = new UserModel(  );
     this.io    = io();
+    var this_closure = this;
+
     this.io.on('connection', function(socket) {
 
-        socket.on('play made', function( dots ) {
+        socket.on('play made', function( newState ) {
 
-            this.dots = JSON.parse( dots );
-            view.render( this.dots );
+            this_closure.model.update( newState );
+            this_closure.view.render( this_closure.model.getMoves() );
 
         });
 
     });
 
+    this.renderView(undefined, this);
 }
-UserControl.prototype.renderView = ( playerMove ) {
+UserControl.prototype.renderView = ( newMove, origin ) => {
     //check for colisions with model
-    this.view.render(this.model.getModel, )
+    console.log(origin);
+    var moves = origin.model.getMoves( );
+
+    if(typeof(newMove) !== 'undefined') {
+        const moveCollides = origin.checkCollisions(moves, newMove);
+        if( !moveCollides )  origin.view.render(moves, newMove, origin.view );
+        else origin.view.renderText("You can't move there!");
+    } else {
+        origin.view.render(moves, undefined, origin.view);
+    }
 }
+UserControl.prototype.checkCollisions = ( moves, newMove ) => {
+    var doesCollide = false
+    if(typeof(moves) !== 'undefined'){
+        for(var i = 0; i < moves.length; i++) {
+            if(typeof(moves[i]) !== 'undefined') {
+                for(var j = 0; j < moves[i].length; j++) {
+                    if( newMove.x === moves[i][j].x && newMove.y === moves[i][j].y ){
+                        doesCollide = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    return doesCollide;
+}
+
 
 function UserModel(  ) {
     this.playerOne = []; //list of moves
     this.playerTwo = [];
 }
+UserModel.prototype.getMoves = (  ) => {
+    return [ this.playerOne, this.playerTwo ];
+}
+
 function GameToken( xyObjectIn ) {
 
     this.x = 0;
@@ -191,15 +218,12 @@ GameToken.prototype.getPosition = ( ) => { return {x: this.x, y: this.y}; }
 
 
 
+
+
+
 window.onload = function( ) {
     var cont = new UserControl();
 }
-
-
-
-
-
-
 
 
 ////////////////////
