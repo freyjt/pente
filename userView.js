@@ -18,7 +18,7 @@ function UserView(canID, initControlObject) {
 
     this.gridCount = 19;
     this.gridSize  = this.gridSpace / this.gridCount;
-
+    this.gameTokenRad = (this.gridSize / 2) - 2;
     ////dynamizeMe
     this.bgColor      = "#ffffff";
     this.playerColors = ['#ff00ff', '#00ff00'];
@@ -29,7 +29,9 @@ function UserView(canID, initControlObject) {
 
         pos = getMousePosition(evt);
         pos = registrantThis.transMouseToGrid( pos );
+        registrantThis.renderView( pos );
         console.log( pos );
+
     });
 
 }
@@ -37,18 +39,18 @@ function UserView(canID, initControlObject) {
 
 //get dots from control
 // package model on server ;)
-UserView.prototype.render  = function( dots, turnDot ) {
+UserView.prototype.render  = ( dots, turnDot ) => {
 
     this.context.fillStyle = this.bgColor;
     this.context.fillRect(0, 0, this.sizeX, this.sizeY);
 
     this.drawGrid( );
-    this.drawDots( dots );
+    this.drawDots( dots, turnDot );
 
 }
 
 
-UserView.prototype.drawGrid = function(  ) {
+UserView.prototype.drawGrid = (  ) => {
     this.context.strokeStyle = this.gridColor;
     this.context.lineWidth   = 3; //exaggerated for visibility at the (literal) edge
     this.context.beginPath();
@@ -69,10 +71,10 @@ UserView.prototype.drawGrid = function(  ) {
     }
     this.context.stroke();
 }
-
+//@todo change this to accept a gamestate object
 UserView.prototype.drawDots = function( dots, playerMove ) {
 
-    //dots is an object of lists of touples
+    //dots is an object of lists of xy objects
     if( typeof(dots) !== 'undefined' ) {
         this.context.beginPath();
         for(var i = 0; i < dots.length; i++) {
@@ -83,6 +85,7 @@ UserView.prototype.drawDots = function( dots, playerMove ) {
                     CODE TO DRAW DOTS
 
                 */
+                this.drawToken( dots[i][j] );
             }
         }
     }
@@ -91,10 +94,25 @@ UserView.prototype.drawDots = function( dots, playerMove ) {
 
     } 
 }
-UserView.prototype.drawToken        = function( tokenIn ) {
-
+UserView.prototype.drawToken        = ( tokenIn, color) => {
+    var center = this.getDrawCenter( tokenIn );
+    this.context.fillStyle   = (typeof(color) === 'string') ? color : "#000000";
+    this.context.strokeStyle = "#000000";
+    this.context.lineWidth   = 3;
+    this.context.beginPath()
+                .arc(center.x, center.y, this.gameTokenRad, 0, 2*Math.PI)
+                .stroke()
+                .fill();
 }
-UserView.prototype.transMouseToGrid = function( mouse ) {
+UserView.prototype.getDrawCenter = ( tokenIn ) => {
+    if( tokenIn instanceof gameToken ) {
+        tokenIn = tokenIn.getPosition();
+    }
+    var xVal = this.startX + tokenIn.x * this.gridSize;
+    var yVal = this.startY + tokenIn.y * this.gridSize;
+    return {x: xVal, y: yVal};
+}
+UserView.prototype.transMouseToGrid = ( mouse ) => {
 
     var halfGrid = this.gridSize / 2;
     //this is true iff we have a square board @TODO we need to offset
@@ -107,9 +125,10 @@ UserView.prototype.transMouseToGrid = function( mouse ) {
 
 function UserControl(   ) {
 
-    this.view = new UserView( 'gameCanvas', this);
+    this.view  = new UserView( 'gameCanvas', this);
     this.view.render( );
-    this.io   = io();
+    this.model = new UserModel();
+    this.io    = io();
     this.io.on('connection', function(socket) {
 
         socket.on('play made', function( dots ) {
@@ -122,8 +141,15 @@ function UserControl(   ) {
     });
 
 }
+UserControl.prototype.renderView = ( playerMove ) {
+    //check for colisions with model
+    this.view.render(this.model.getModel, )
+}
 
-
+function UserModel(  ) {
+    this.playerOne = []; //list of moves
+    this.playerTwo = [];
+}
 function GameToken( xyObjectIn ) {
 
     this.x = 0;
@@ -143,9 +169,10 @@ function GameToken( xyObjectIn ) {
             console.log("Bad assignment in gameToken constructor.")
         }
     }
+
 }
-GameToken.prototype.setLocation = ( xyObjectIn ) => {
-        if( typeof( xyObjectIn) !== 'undefined' ) {
+GameToken.prototype.setPosition = ( xyObjectIn ) => {
+    if( typeof( xyObjectIn) !== 'undefined' ) {
         try {
             if(typeof( xyObjectIn.x) !== 'undefined' &&
                 typeof( xyObjectIn.y) !== 'undefined') {
@@ -160,7 +187,7 @@ GameToken.prototype.setLocation = ( xyObjectIn ) => {
         }
     }
 }
-GameToken.prototype.getLocation = ( ) => { return {x: this.x, y: this.y}; }
+GameToken.prototype.getPosition = ( ) => { return {x: this.x, y: this.y}; }
 
 
 
