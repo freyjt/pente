@@ -28,15 +28,16 @@ function UserView(canID, initControlObject) {
     this.canvas.addEventListener("mousemove", function(evt) {
 
         pos = getMousePosition(evt);
-        console.log(pos);
         pos = registrantThis.transMouseToGrid( pos, registrantThis);
-        console.log( pos );
-
         registrantThis.control.renderView( pos, registrantThis.control);
         
 
     });
-
+    this.canvas.addEventListener("mousedown", function(evt) {
+        pos = getMousePosition(evt);
+        pos = registrantThis.transMouseToGrid( pos, registrantThis);
+        registrantThis.control.makeMove( pos, registrantThis.control );
+    });
 }
 
 //get dots from control
@@ -85,25 +86,26 @@ UserView.prototype.drawDots = function( dots, playerMove ) {
     }
     if( typeof(playerMove) !== 'undefined' ) {
 
+        this.drawToken( playerMove, undefined, this);
 
     } 
 }
-UserView.prototype.drawToken        = ( tokenIn, color) => {
-    var center = this.getDrawCenter( tokenIn );
-    this.context.fillStyle   = (typeof(color) === 'string') ? color : "#000000";
-    this.context.strokeStyle = "#000000";
-    this.context.lineWidth   = 3;
-    this.context.beginPath()
-                .arc(center.x, center.y, this.gameTokenRad, 0, 2*Math.PI)
-                .stroke()
-                .fill();
+UserView.prototype.drawToken        = ( tokenIn, color, caller) => {
+    var center = caller.getDrawCenter( tokenIn, caller );
+    caller.context.fillStyle   = (typeof(color) === 'string') ? color : "#000000";
+    caller.context.strokeStyle = "#000000";
+    caller.context.lineWidth   = 3;
+    caller.context.beginPath()
+    caller.context.arc(center.x, center.y, caller.gameTokenRad, 0, 2*Math.PI)
+    caller.context.stroke()
+    caller.context.fill();
 }
-UserView.prototype.getDrawCenter = ( tokenIn ) => {
-    if( tokenIn instanceof gameToken ) {
+UserView.prototype.getDrawCenter = ( tokenIn, caller ) => {
+    if( tokenIn instanceof GameToken ) {
         tokenIn = tokenIn.getPosition();
     }
-    var xVal = this.startX + tokenIn.x * this.gridSize;
-    var yVal = this.startY + tokenIn.y * this.gridSize;
+    var xVal = caller.startX + tokenIn.x * caller.gridSize;
+    var yVal = caller.startY + tokenIn.y * caller.gridSize;
     return {x: xVal, y: yVal};
 }
 UserView.prototype.transMouseToGrid = ( mouse, caller) => {
@@ -113,9 +115,12 @@ UserView.prototype.transMouseToGrid = ( mouse, caller) => {
     //  mouse and size?
     var X = Math.floor( caller.gridCount * (mouse.x + halfGrid) / caller.sizeX);
     var Y = Math.floor( caller.gridCount * (mouse.y + halfGrid) / caller.sizeY);
-    console.log( mouse.x + " : " + X );
+
     return {x: X, y: Y};
 }
+
+
+
 
 
 
@@ -138,17 +143,17 @@ function UserControl(   ) {
 
     this.renderView(undefined, this);
 }
-UserControl.prototype.renderView = ( newMove, origin ) => {
+UserControl.prototype.renderView = ( newMove, caller ) => {
     //check for colisions with model
-    console.log(origin);
-    var moves = origin.model.getMoves( );
+
+    var moves = caller.model.getMoves( );
 
     if(typeof(newMove) !== 'undefined') {
-        const moveCollides = origin.checkCollisions(moves, newMove);
-        if( !moveCollides )  origin.view.render(moves, newMove, origin.view );
-        else origin.view.renderText("You can't move there!");
+        const moveCollides = caller.checkCollisions(moves, newMove);
+        if( !moveCollides )  caller.view.render(moves, newMove, caller.view );
+        else caller.view.renderText("You can't move there!");
     } else {
-        origin.view.render(moves, undefined, origin.view);
+        caller.view.render(moves, undefined, caller.view);
     }
 }
 UserControl.prototype.checkCollisions = ( moves, newMove ) => {
@@ -167,6 +172,16 @@ UserControl.prototype.checkCollisions = ( moves, newMove ) => {
     }
     return doesCollide;
 }
+UserControl.prototype.makeMove = (movePlacement, caller) => {
+    var moves     = caller.model.getMoves( );
+    var collision = caller.checkCollisions();
+    if( !collision ) {
+        caller.io.emit("play made", JSON.stringify(movePlacement));
+    }
+}
+
+
+
 
 
 function UserModel(  ) {
@@ -176,6 +191,11 @@ function UserModel(  ) {
 UserModel.prototype.getMoves = (  ) => {
     return [ this.playerOne, this.playerTwo ];
 }
+
+
+
+
+
 
 function GameToken( xyObjectIn ) {
 
@@ -196,7 +216,6 @@ function GameToken( xyObjectIn ) {
             console.log("Bad assignment in gameToken constructor.")
         }
     }
-
 }
 GameToken.prototype.setPosition = ( xyObjectIn ) => {
     if( typeof( xyObjectIn) !== 'undefined' ) {
