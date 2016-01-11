@@ -142,8 +142,10 @@ function UserControl(   ) {
 
         });
         socket.on('join room', function( payload ) {
+            console.log("LLL")
             payload = JSON.parse(payload);
             this_closure.setRoomName( payload.roomName, this_closure );
+            console.log("::" + this.rooms);
         });
         socket.on('join-error', function( error ) {
             this_closure.view.renderText( error );
@@ -151,6 +153,7 @@ function UserControl(   ) {
 
 
     });
+
     //Really affecting binding here soooo....do better
     var join_button = document.getElementById('roomJoin');
     join_button.onclick = function(evt) {
@@ -162,7 +165,9 @@ function UserControl(   ) {
         } else {
             document.getElementById('whichRoom').value = "Must select room name.";
         }
+        
     }
+
     this.renderView(undefined, this);
 }
 UserControl.prototype.renderView = ( newMove, caller ) => {
@@ -179,6 +184,7 @@ UserControl.prototype.renderView = ( newMove, caller ) => {
     }
 }
 UserControl.prototype.setRoomName = ( nameIn, caller ) => {
+
     caller.roomName = nameIn;
 }
 UserControl.prototype.checkCollisions = ( moves, newMove ) => {

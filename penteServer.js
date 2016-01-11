@@ -32,31 +32,32 @@ function penteServer( ) {
         });
 
         socket.on('room join', function(payload) {
-            console.log(payload);
-            var payload = JSON.parse(payload);
-            console.log("::" + payload);
-            console.log("roomName    " + payload.roomName);
 
-            if(typeof(openGames[payload["roomName"]]) !== "undefined"
-                && openGames[payload.roomName].numberPlaying < 2) {
+            payload = JSON.parse(payload);
+            console.log(typeof(payload.passPhrase));
+            if( typeof( openGames[payload.roomName] ) !== "undefined" && openGames[payload.roomName].numberPlaying() < 2) {
 
                 if(openGames[payload.roomName].passPhrase === payload.passPhrase){
+                    console.log( this );
                     openGames[payload.roomName].addPlayer( payload.playerId );
+                    this.join( payload.roomName );
                 } else {
-               //     socket.emit('join-error', "Wrong passPhrase!");
+                    this.emit('join-error', "Wrong passPhrase!");
                 }
                 console.log( openGames );
+
             } else if(typeof(openGames[payload.roomName]) !== "undefined"
                 && openGames[payload.roomName].numberPlaying >= 2) {
             
-              //  socket.emit('join-error', "Too many playing in that room!");
+                this.emit('join-error', "Too many playing in that room!");
 
             } else {
                 openGames[payload.roomName] = new GameState( payload.roomName, payload.playerId );
-                
-                if(typeof(payload.passPhrase) !== 'undefined'
-                    && payload.passPhrase.length > 0) {
+                this.emit('join room', JSON.stringify( { roomName: payload.roomName } ) );
+
+                if( typeof(payload.passPhrase) !== 'undefined' && payload.passPhrase.length > 0) {
                     openGames[payload.roomName].setPassPhrase(payload.passPhrase);
+                    this.join( payload.roomName );
                 }
 
                 console.log(openGames);
@@ -81,11 +82,20 @@ function GameState( roomName, player1) {
     this.passPhrase = "";
 }
 GameState.prototype.addPlayer = ( playerName ) => {
+
     if(typeof(this.playerOne) === 'undefined') {
         this.playerOne = playerName;
-    } else if(typeof(this.playerTwo) === 'undefined') {
+    } else if(this.playerTwo.length === 0 || typeof(this.playerTwo.length) === 'undefined') {
         this.playerTwo = playerName;
     }
+}
+//@TODO this is always returning two, preventing you from
+//  testing other functionality
+GameState.prototype.numberPlaying = ( ) => {
+    var numPlaying = 0;
+    if( typeof(this.playerOne) !== 'undefined') numberPlaying += 1;
+    if( typeof(this.playerTwo) !== 'undefined') numberPlaying += 1;
+    return numPlaying;
 }
 GameState.prototype.setPassPhrase = ( passIn ) => {
     this.passPhrase = passIn;
