@@ -19,41 +19,53 @@ function penteServer( ) {
         res.sendFile(__dirname + '/userView.html');
         console.log("user access");
     });
+
     app.get('/userView.js', function(req, res) {
         res.sendFile(__dirname + '/userview.js');
         console.log("js served");
     });
 
+
+
     io.on('connection', function(socket) {
+
         console.log("new connection on socket");
 
         socket.on('play made', function(payload) {
-            console.log( JSON.parse(payload) );
+            console.log( payload );
         });
 
-        socket.on('room join', function(payload) {
+        socket.on('join_room', function(payload) {
 
-            payload = JSON.parse(payload);
-            console.log(typeof(payload.passPhrase));
+            
+            console.log( typeof(payload.passPhrase) );
+
             if( typeof( openGames[payload.roomName] ) !== "undefined" && openGames[payload.roomName].numberPlaying() < 2) {
-
+                console.log("::" + payload.passPhrase);
                 if(openGames[payload.roomName].passPhrase === payload.passPhrase){
-                    console.log( this );
+                    console.log( socket.emit );
                     openGames[payload.roomName].addPlayer( payload.playerId );
                     this.join( payload.roomName );
+
+                    io.emit('join_room', { roomName: payload.roomName } );
+
+
                 } else {
-                    this.emit('join-error', "Wrong passPhrase!");
+
+                    io.emit('join_error', "Wrong passPhrase!");
+
                 }
                 console.log( openGames );
 
             } else if(typeof(openGames[payload.roomName]) !== "undefined"
                 && openGames[payload.roomName].numberPlaying >= 2) {
             
-                this.emit('join-error', "Too many playing in that room!");
+                io.emit('join_error', "Too many playing in that room!");
 
             } else {
+
                 openGames[payload.roomName] = new GameState( payload.roomName, payload.playerId );
-                this.emit('join room', JSON.stringify( { roomName: payload.roomName } ) );
+                io.emit('join_room',  { roomName: payload.roomName }  );
 
                 if( typeof(payload.passPhrase) !== 'undefined' && payload.passPhrase.length > 0) {
                     openGames[payload.roomName].setPassPhrase(payload.passPhrase);

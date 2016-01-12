@@ -131,28 +131,8 @@ function UserControl(   ) {
     this.model = new UserModel(  );
     this.roomName = "";
     this.io    = io();
-    var this_closure = this;
 
-    this.io.on('connection', function(socket) {
-
-        socket.on('play made', function( newState ) {
-
-            this_closure.model.update( newState );
-            this_closure.view.render( this_closure.model.getMoves() );
-
-        });
-        socket.on('join room', function( payload ) {
-            console.log("LLL")
-            payload = JSON.parse(payload);
-            this_closure.setRoomName( payload.roomName, this_closure );
-            console.log("::" + this.rooms);
-        });
-        socket.on('join-error', function( error ) {
-            this_closure.view.renderText( error );
-        });
-
-
-    });
+    this.setupSocketHandlers( this.io );
 
     //Really affecting binding here soooo....do better
     var join_button = document.getElementById('roomJoin');
@@ -161,7 +141,7 @@ function UserControl(   ) {
         payload.roomName   = document.getElementById('whichRoom').value;
         if( payload.roomName.length > 0) {
             payload.passPhrase = document.getElementById('passPhrase').value;
-            this_closure.packageAndShip('room join', payload, this_closure );
+            this_closure.packageAndShip('join_room', payload, this_closure );
         } else {
             document.getElementById('whichRoom').value = "Must select room name.";
         }
@@ -215,7 +195,36 @@ UserControl.prototype.packageAndShip = ( event, payload, controlObject ) => {
         payload.roomName = controlObject.roomName;
     controlObject.io.emit(event, JSON.stringify(payload) );
 }
+UserControl.prototype.setupSocketHandlers = ( io ) => {
+    
+    console.log( this );
+    io.on('connection', function(socket) {
 
+        socket.on('evt', function(evt, data) {
+            console.log(":: " + data);
+        });
+        
+        socket.on('play made', function( data ) {
+
+            this.model.update( newState );
+            this.view.render( this_closure.model.getMoves() );
+
+        });
+
+        socket.on("join_room", function(  data ) {
+            console.log("LLL")
+
+            this.setRoomName( data.roomName );
+            console.log("::" + this.rooms);
+        });
+
+        socket.on('join_error', function(  error ) {
+            console.log(error);
+            this_closure.view.renderText( error );
+        });
+
+    });
+}
 
 
 
@@ -265,7 +274,8 @@ GameToken.prototype.setPosition = ( xyObjectIn ) => {
         }
     }
 }
-GameToken.prototype.getPosition = ( ) => { return {x: this.x, y: this.y}; }
+GameToken.prototype.getPosition = ( ) => 
+        {  {x: this.x, y: this.y}; }
 
 
 
