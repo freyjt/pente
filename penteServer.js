@@ -65,10 +65,9 @@ function penteServer( ) {
             if( typeof( openGames[payload.roomName] ) !== "undefined" && openGames[payload.roomName].numberPlaying() < 2) {
 
                 if(openGames[payload.roomName].passPhrase === payload.passPhrase){
-                    openGames[payload.roomName].addPlayer( payload.playerId );
+                    openGames[payload.roomName].addPlayer( payload.playerId, openGames[payload.roomName] );
                     this.join( payload.roomName );
                     io.to(payload.roomName).emit('_JOINROOM', openGames[payload.roomName] );
-
 
                 } else {
 
@@ -138,27 +137,27 @@ function GameState( roomName, player1) {
     //using an array here because of significantly
     //  faster win condition lookup
     this.plays  = [];
-
+    this.initiatePlays(this);
     this.captures = {
         playerOne: 0,
         playerTwo: 0
     }
 }
-GameState.prototype.initiatePlays = ( ) => {
-    this.plays = [];
-    for(var i = 0; i < this.gridSize; i += 1) {
-        this.plays.push([]);
-        for(var j = 0; j < this.gridSize; j += 1) {
-            this.plays[i].push( 0 );
+GameState.prototype.initiatePlays = (caller ) => {
+    caller.plays = [];
+    for(var i = 0; i < caller.gridSize; i += 1) {
+        caller.plays.push([]);
+        for(var j = 0; j < caller.gridSize; j += 1) {
+            caller.plays[i].push( 0 );
         }
     }
 }
-GameState.prototype.addPlayer = ( playerName ) => {
+GameState.prototype.addPlayer = ( playerName, caller ) => {
 
-    if(       this.playerOne.length === 0 || typeof(this.playerOne) === 'undefined') {
-        this.playerOne = playerName;
-    } else if(this.playerTwo.length === 0 || typeof(this.playerTwo) === 'undefined') {
-        this.playerTwo = playerName;
+    if( typeof(caller.playerOne) === 'undefined' || caller.playerOne.length === 0 ) {
+        caller.playerOne = playerName;
+    } else if( typeof(caller.playerTwo) === 'undefined' || caller.playerTwo.length === 0 ) {
+        caller.playerTwo = playerName;
     }
 }
 //@TODO this is always returning two, preventing you from

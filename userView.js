@@ -103,9 +103,6 @@ UserView.prototype.drawToken     = ( tokenIn, color, caller) => {
     caller.context.fill();
 }
 UserView.prototype.getDrawCenter = ( tokenIn, caller ) => {
-    if( tokenIn instanceof GameToken ) {
-        tokenIn = tokenIn.getPosition();
-    }
     var xVal = caller.startX + tokenIn.x * caller.gridSize;
     var yVal = caller.startY + tokenIn.y * caller.gridSize;
     return {x: xVal, y: yVal};
@@ -158,7 +155,7 @@ function UserControl(   ) {
         console.log(payload.roomName);
         if( payload.roomName.length > 0) {
             payload.passPhrase = document.getElementById('passPhrase').value;
-            payload.myName     = rescope_this.view.getMyName( rescope_this);
+            payload.playerId   = rescope_this.view.getMyName( rescope_this);
             rescope_this.packageAndShip('join_room', payload, rescope_this );
         } else {
             document.getElementById('whichRoom').value = "Must select room name.";
@@ -200,8 +197,8 @@ UserControl.prototype.makeMove = (movePlacement, caller) => {
         }
     }
 }
-UserControl.prototype.updateRoomList = ( data, caller ) {
-    
+UserControl.prototype.updateRoomList = ( data, caller ) => {
+
 }
 UserControl.prototype.packageAndShip = ( event, payload, controlObject ) => {
     if(typeof(payload.roomName) === 'undefined')
@@ -229,7 +226,9 @@ UserControl.prototype.setupSocketHandlers = (  caller ) => {
 
         caller.io.on('_JOINROOM', function( data) {
             console.log(data.roomName);
-            caller.model = new UserModel( data );
+            if( caller.model == null)
+                caller.model = new UserModel( data );
+            else caller.model.updateModel( data );
         });
 
         caller.io.on('_JOINERROR', function(  error ) {
@@ -245,7 +244,9 @@ function UserModel( modelIn ) {
     //if the instantiating player is the first in the room
     // the will go when whosTurn is true; else they are the 
     // second in the room and will go when whosturn is fals
-    // This should be more robust to allow for changing first move
+    // This should be more robust
+    this.myTurn    = true;
+    //this is the very first instantiation
     this.myTurn    = (modelIn.playerTwo.length > 0) ? false : true;
     this.gameOver  = false;
 
@@ -282,16 +283,10 @@ UserModel.prototype.getMyName = () => {
     return this.myName;
 }
 UserModel.prototype.getYourTurn = ( ) => {
-    var yourTurn = false;
-    if(this.myTurn === this.whosTurn) { yourTurn = true; }
-    return yourTurn;
+    return this.myTurn === this.whosTurn;
 }
 UserModel.prototype.checkCollisions = (newMove) => {
-    var collides = false;
-    if( this.plays[newMove.x][newMove.y] !== 0 ) {
-        collides = true;
-    }
-    return collides;
+    return this.plays[newMove.x][newMove.y] !== 0 ;
 }
 UserModel.prototype.getInProgress = ( ) => {
     return this.gameOver;
