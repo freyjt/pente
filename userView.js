@@ -130,10 +130,10 @@ function UserControl(   ) {
     this.view  = new UserView( 'gameCanvas', this);
     this.model = new UserModel(  );
     this.roomName = "";
-    this.io    = io();
+    this.io    = io( );
 
-    this.setupSocketHandlers( this.io );
-
+    this.setupSocketHandlers( this );
+    var rescope_this = this;
     //Really affecting binding here soooo....do better
     var join_button = document.getElementById('roomJoin');
     join_button.onclick = function(evt) {
@@ -141,7 +141,7 @@ function UserControl(   ) {
         payload.roomName   = document.getElementById('whichRoom').value;
         if( payload.roomName.length > 0) {
             payload.passPhrase = document.getElementById('passPhrase').value;
-            this_closure.packageAndShip('join_room', payload, this_closure );
+            rescope_this.packageAndShip('join_room', payload, rescope_this );
         } else {
             document.getElementById('whichRoom').value = "Must select room name.";
         }
@@ -193,37 +193,35 @@ UserControl.prototype.makeMove = (movePlacement, caller) => {
 UserControl.prototype.packageAndShip = ( event, payload, controlObject ) => {
     if(typeof(payload.roomName) === 'undefined')
         payload.roomName = controlObject.roomName;
-    controlObject.io.emit(event, JSON.stringify(payload) );
+    controlObject.io.emit(event, payload );
 }
-UserControl.prototype.setupSocketHandlers = ( io ) => {
-    
-    console.log( this );
-    io.on('connection', function(socket) {
+UserControl.prototype.setupSocketHandlers = (  caller ) => {
 
-        socket.on('evt', function(evt, data) {
+
+        var caller = caller;
+
+        caller.io.on('evt', function(evt, data) {
             console.log(":: " + data);
         });
-        
-        socket.on('play made', function( data ) {
 
-            this.model.update( newState );
-            this.view.render( this_closure.model.getMoves() );
+
+        caller.io.on('play_made', function( data ) {
+
+            caller.model.update( newState );
+            caller.view.render( caller.model.getMoves() );
 
         });
 
-        socket.on("join_room", function(  data ) {
-            console.log("LLL")
 
-            this.setRoomName( data.roomName );
-            console.log("::" + this.rooms);
-        });
+        caller.io.on('join_room', function( data) {
+            caller.setRoomName( data.roomName, caller );
+        } );
 
-        socket.on('join_error', function(  error ) {
+        caller.io.on('join_error', function(  error ) {
             console.log(error);
-            this_closure.view.renderText( error );
+            caller.view.renderText( error );
         });
 
-    });
 }
 
 
@@ -274,8 +272,7 @@ GameToken.prototype.setPosition = ( xyObjectIn ) => {
         }
     }
 }
-GameToken.prototype.getPosition = ( ) => 
-        {  {x: this.x, y: this.y}; }
+GameToken.prototype.getPosition = ( ) => { return {x: this.x, y: this.y}; }
 
 
 

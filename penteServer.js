@@ -39,11 +39,11 @@ function penteServer( ) {
 
             
             console.log( typeof(payload.passPhrase) );
+            io.emit('join_room', {'please': 'work'} );
 
             if( typeof( openGames[payload.roomName] ) !== "undefined" && openGames[payload.roomName].numberPlaying() < 2) {
                 console.log("::" + payload.passPhrase);
                 if(openGames[payload.roomName].passPhrase === payload.passPhrase){
-                    console.log( socket.emit );
                     openGames[payload.roomName].addPlayer( payload.playerId );
                     this.join( payload.roomName );
 
@@ -63,12 +63,12 @@ function penteServer( ) {
                 io.emit('join_error', "Too many playing in that room!");
 
             } else {
-
+                console.log("first: " + payload.passPhrase);
                 openGames[payload.roomName] = new GameState( payload.roomName, payload.playerId );
                 io.emit('join_room',  { roomName: payload.roomName }  );
 
                 if( typeof(payload.passPhrase) !== 'undefined' && payload.passPhrase.length > 0) {
-                    openGames[payload.roomName].setPassPhrase(payload.passPhrase);
+                    openGames[payload.roomName].setPassPhrase(payload.passPhrase, openGames[payload.roomName]);
                     this.join( payload.roomName );
                 }
 
@@ -109,8 +109,9 @@ GameState.prototype.numberPlaying = ( ) => {
     if( typeof(this.playerTwo) !== 'undefined') numberPlaying += 1;
     return numPlaying;
 }
-GameState.prototype.setPassPhrase = ( passIn ) => {
-    this.passPhrase = passIn;
+GameState.prototype.setPassPhrase = ( passIn, mutator) => {
+    console.log( this );
+    mutator.passPhrase = passIn;
 }
 GameState.prototype.validateMove  = ( moveIn ) => {
 
