@@ -51,7 +51,7 @@ UserView.prototype.render  = ( dots, turnDot, caller ) => {
     caller.drawDots( dots, turnDot );
 
 }
-UserView.prototype.renderText = (textString, caller) => {
+UserView.prototype.renderText = (textString, status, caller) => {
     caller.context.globalAlpha = .5;
     caller.context.fillStyle = 'red';
     caller.context.fillRect(0,0, caller.sizeX, caller.sizeY);
@@ -185,9 +185,11 @@ UserControl.prototype.checkCollisions = ( moves, newMove ) => {
 }
 UserControl.prototype.makeMove = (movePlacement, caller) => {
     var moves     = caller.model.getMoves( );
-    var collision = caller.checkCollisions();
+    var collision = caller.checkCollisions( movePlacement );
     if( !collision ) {
-        caller.io.emit("play made", JSON.stringify(movePlacement));
+        caller.packageAndShip("play_made", movePlacement, caller);
+    } else {
+        caller.view.renderText("Illegal move!", "error", caller.view);
     }
 }
 UserControl.prototype.packageAndShip = ( event, payload, controlObject ) => {
@@ -197,27 +199,17 @@ UserControl.prototype.packageAndShip = ( event, payload, controlObject ) => {
 }
 UserControl.prototype.setupSocketHandlers = (  caller ) => {
 
-
-        var caller = caller;
-
-        caller.io.on('evt', function(evt, data) {
-            console.log(":: " + data);
-        });
-
-
-        caller.io.on('play_made', function( data ) {
-
-            caller.model.update( newState );
+        caller.io.on('_PLAYMADE', function( data ) {
+            caller.model.update( data );
             caller.view.render( caller.model.getMoves() );
-
         });
 
-
-        caller.io.on('join_room', function( data) {
+        caller.io.on('_JOINROOM', function( data) {
+            console.log(data.roomName);
             caller.setRoomName( data.roomName, caller );
-        } );
+        });
 
-        caller.io.on('join_error', function(  error ) {
+        caller.io.on('_JOINERROR', function(  error ) {
             console.log(error);
             caller.view.renderText( error );
         });
@@ -280,7 +272,7 @@ GameToken.prototype.getPosition = ( ) => { return {x: this.x, y: this.y}; }
 
 
 window.onload = function( ) {
-    var cont = new UserControl();
+    window.cont = new UserControl();
 }
 
 
