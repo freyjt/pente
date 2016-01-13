@@ -22,6 +22,7 @@ function UserView(canID, initControlObject) {
     ////dynamizeMe
     this.bgColor      = "#ffffff";
     this.playerColors = ['#ff00ff', '#00ff00'];
+    this.newMoveColor = "#aabbcc";
     this.gridColor    = "#000000";
 
     var registrantThis = this;
@@ -73,17 +74,16 @@ UserView.prototype.drawGrid = ( caller ) => {
     caller.context.stroke();
 }
 //@todo change this to accept a gamestate object
-UserView.prototype.drawDots = function( dots, playerMove ) {
+UserView.prototype.drawDots = function( playArr, playerMove, caller ) {
 
     //dots is an object of lists of xy objects
-    if( typeof(dots) !== 'undefined' ) {
-        this.context.beginPath();
-        for(var i = 0; i < dots.length; i++) {
-            this.context.fillStyle = this.playerColors[i];
-            if(typeof(dots[i]) !== 'undefined')
-                for(var j = 0; j < dots[i].length; j++) {
-                    this.drawToken( dots[i][j] );
-                }
+    for(var i = 0; i < playArr.length; i++ ) {
+        for(var j = 0; j < playArr[i].length; j++) {
+            if( playArr[i][j] === 1 ) {
+                caller.drawToken({x: i, y: j}, caller.playerColors[0], caller);
+            } else if( playArr[i][j] === 2 ) {
+                caller.drawToken({x: i, y: j}, caller.playerColors[1], caller);
+            }
         }
     }
     if( typeof(playerMove) !== 'undefined' ) {
@@ -92,7 +92,7 @@ UserView.prototype.drawDots = function( dots, playerMove ) {
 
     } 
 }
-UserView.prototype.drawToken        = ( tokenIn, color, caller) => {
+UserView.prototype.drawToken     = ( tokenIn, color, caller) => {
     var center = caller.getDrawCenter( tokenIn, caller );
     caller.context.fillStyle   = (typeof(color) === 'string') ? color : "#000000";
     caller.context.strokeStyle = "#000000";
@@ -120,15 +120,30 @@ UserView.prototype.transMouseToGrid = ( mouse, caller) => {
 
     return {x: X, y: Y};
 }
-
-
+UserView.prototype.getMyName = ( controller ) => {
+    var name = document.getElementById('myName').value;
+    if(name.length === 0) {
+        name = 'Player';
+        document.getElementById('myName').value = name;
+    }
+    return name;
+}
+UserView.prototype.getRoomName = ( controller ) => {
+    var roomName = document.getElementById('whichRoom').value;
+    console.log("LL" + roomName);
+    if(roomName.length === 0) {
+        roomName = randomString( 10 );
+        document.getElementById('whichRoom').value = roomName;
+    }
+    return roomName;
+}
 
 
 
 
 function UserControl(   ) {
     this.view  = new UserView( 'gameCanvas', this);
-    this.model = new UserModel(  );
+    this.model = null;
     this.roomName = "";
     this.io    = io( );
 
@@ -139,9 +154,11 @@ function UserControl(   ) {
 
     join_button.onclick = function(evt) {
         var payload        = {};
-        payload.roomName   = document.getElementById('whichRoom').value;
+        payload.roomName   = rescope_this.view.getRoomName( );
+        console.log(payload.roomName);
         if( payload.roomName.length > 0) {
             payload.passPhrase = document.getElementById('passPhrase').value;
+            payload.myName     = rescope_this.view.getMyName( rescope_this);
             rescope_this.packageAndShip('join_room', payload, rescope_this );
         } else {
             document.getElementById('whichRoom').value = "Must select room name.";
@@ -153,37 +170,40 @@ function UserControl(   ) {
 }
 UserControl.prototype.renderView = ( newMove, caller ) => {
     //check for colisions with model
-
-    var moves = caller.model.getMoves( );
-
-    if(typeof(newMove) !== 'undefined') {
+    if(typeof(newMove) !== 'undefined' && caller.model !== null) {
+        var moves = caller.model.getMoves( );
         const moveCollides = caller.model.checkCollisions( newMove );
         if( !moveCollides )  caller.view.render(moves, newMove, caller.view );
         else caller.view.renderText("You can't move there!");
     } else {
-        caller.view.render(moves, undefined, caller.view);
+        caller.view.render( [ [] ], undefined, caller.view);
     }
 }
 UserControl.prototype.setRoomName = ( nameIn, caller ) => {
     caller.roomName = nameIn;
 }
 UserControl.prototype.makeMove = (movePlacement, caller) => {
-    //check if it's your turn
-    var yourTurn = caller.model.getYourTurn( );
-    if( yourTurn ) {
-        var collision = caller.model.checkCollisions( movePlacement );
-        if( !collision ) {
-            caller.packageAndShip("play_made", movePlacement, caller);
+    //check if game is in progress
+    var gameInProgress = caller.model.getInProgress( );
+    if(gameInProgress) {
+        //check if it's your turn
+        var yourTurn = caller.model.getYourTurn( );
+        if( yourTurn ) {
+            var collision = caller.model.checkCollisions( movePlacement );
+            if( !collision ) {
+                caller.packageAndShip("play_made", movePlacement, caller);
+            } else {
+                caller.view.renderText("Illegal move!", "error", caller.view);
+            }
         } else {
-            caller.view.renderText("Illegal move!", "error", caller.view);
+            caller.view.renderText("It's not your turn!", 'error', caller.view);
         }
-    } else {
-        caller.view.renderText("It's not your turn!", 'error', caller.view);
     }
 }
+
 UserControl.prototype.packageAndShip = ( event, payload, controlObject ) => {
     if(typeof(payload.roomName) === 'undefined')
-        payload.roomName = controlObject.roomName;
+        payload.roomName = controlObject.model.getRoomName();
     controlObject.io.emit(event, payload );
 }
 UserControl.prototype.setupSocketHandlers = (  caller ) => {
@@ -192,25 +212,27 @@ UserControl.prototype.setupSocketHandlers = (  caller ) => {
             caller.model.update( data );
             caller.view.render( caller.model.getMoves() );
         });
-        caller.io.on('_GAMEOVER'), function( data ) {
-            if( data.whosTurn && data.playerOne == caller.model.getMyName() ) {
 
+        caller.io.on('_GAMEOVER'), function( data ) {
+            //we don't flip the turn bit on serverSide
+            if( data.whosTurn === caller.model.myTurn ) {
+                caller.view.renderText("You Win!", "end_of_game", caller.view);
+            } else {
+                caller.view.renderText("You Lose!", "end_of_game", caller.view);
             }
-            caller.view.renderText("You Win!", "end_of_game", caller.view);
         }
 
         caller.io.on('_JOINROOM', function( data) {
             console.log(data.roomName);
-            caller.setRoomName( data.roomName, caller );
+            caller.model = new UserModel( data );
         });
 
         caller.io.on('_JOINERROR', function(  error ) {
             console.log(error);
-            caller.view.renderText( error );
+            caller.view.renderText( error, 'error', caller.view );
         });
 
 }
-
 
 //Initialize a new game with the model object from
 // server on _JOINROOM (or _NEWGAME when it exists) event
@@ -220,6 +242,8 @@ function UserModel( modelIn ) {
     // second in the room and will go when whosturn is fals
     // This should be more robust to allow for changing first move
     this.myTurn    = (modelIn.playerTwo.length > 0) ? false : true;
+    this.gameOver  = false;
+
 
     this.roomName  = null;
     this.playerOne = null;
@@ -264,7 +288,15 @@ UserModel.prototype.checkCollisions = (newMove) => {
     }
     return collides;
 }
-
+UserModel.prototype.getInProgress = ( ) => {
+    return this.gameOver;
+}
+UserModel.prototype.endGame = ( ) => {
+    this.gameOver = false;
+}
+UserModel.prototype.getRoomName = ( ) => {
+    return this.roomName;
+}
 
 
 window.onload = function( ) {
@@ -293,3 +325,14 @@ function getMousePosition(e) {
     }
 }
 //END http://www.kirupa.com/html5/getting_mouse_click_position.htm
+
+//////////////////
+//randomstring
+function randomString( length ) {
+    var abc = "abcdefghijklmnopqrstuvwxyz";
+    var stringOut = "";
+    for(var i = 0; i < length; i++) {
+        stringOut += abc[ Math.floor( Math.random() * abc.length ) ];
+    }
+    return stringOut;
+}

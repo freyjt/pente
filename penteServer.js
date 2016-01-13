@@ -30,7 +30,13 @@ function penteServer( ) {
     io.on('connection', function(socket) {
 
         console.log("new connection on socket");
-
+        //whenever one requests a room list, we can send
+        // to all ....kinda super exploitable though...
+        // @todo find a more robust solution
+        socket.on('list_rooms', function( data ) {
+            var roomList = generateRoomList(openGames);
+            io.emit("_ROOMLIST", roomList);
+        })
         socket.on('play_made', function(payload) {
             console.log( payload );
             var collides = openGames[payload.roomName].checkCollision(payload);
@@ -99,6 +105,25 @@ function penteServer( ) {
 } penteServer( );
 
 
+function generateRoomList( openGames ) {
+
+    var roomList      = [];
+    var numberPlaying = 0;
+    for( room in openGames ) {
+        numberPlaying = openGames[room].getNumberPlaying( );
+        //////
+        //@@@@@@@TODO
+        //WE'RE CLEARING OUT DEAD WOOD HERE, THAT'S KINDA A TERRIBLE
+        // PLACE TO DO THAT. FIX IT.
+        if( numberPlaying == 0 ) delete openGames[room];
+        else
+            roomList.push( 
+                {   roomName:      openGames[room].roomName,
+                    numberPlaying: numberPlaying
+                });
+    }
+
+}
 
 
 function GameState( roomName, player1) {
@@ -119,7 +144,7 @@ function GameState( roomName, player1) {
         playerTwo: 0
     }
 }
-GameState.prototype.initiatePlays = ( ) {
+GameState.prototype.initiatePlays = ( ) => {
     this.plays = [];
     for(var i = 0; i < this.gridSize; i += 1) {
         this.plays.push([]);
@@ -272,4 +297,7 @@ GameState.prototype.checkCollision = ( payloadObject ) => {
         collides = true;
     }
     return collides;
+}
+GameState.prototype.getNumberPlaying = ( ) => {
+    if()
 }
