@@ -184,12 +184,17 @@ UserControl.prototype.checkCollisions = ( moves, newMove ) => {
     return doesCollide;
 }
 UserControl.prototype.makeMove = (movePlacement, caller) => {
-    var moves     = caller.model.getMoves( );
-    var collision = caller.checkCollisions( movePlacement );
-    if( !collision ) {
-        caller.packageAndShip("play_made", movePlacement, caller);
+    //check if it's your turn
+    if(()  ) {
+        var moves     = caller.model.getMoves( );
+        var collision = caller.checkCollisions( movePlacement );
+        if( !collision ) {
+            caller.packageAndShip("play_made", movePlacement, caller);
+        } else {
+            caller.view.renderText("Illegal move!", "error", caller.view);
+        }
     } else {
-        caller.view.renderText("Illegal move!", "error", caller.view);
+        caller.view.renderText("It's not your turn!", 'error', caller.view);
     }
 }
 UserControl.prototype.packageAndShip = ( event, payload, controlObject ) => {
@@ -203,6 +208,12 @@ UserControl.prototype.setupSocketHandlers = (  caller ) => {
             caller.model.update( data );
             caller.view.render( caller.model.getMoves() );
         });
+        caller.io.on('_GAMEOVER'), function( data ) {
+            if( data.whosTurn && data.playerOne == caller.model.getMyName() ) {
+
+            }
+            caller.view.renderText("You Win!", "end_of_game", caller.view);
+        }
 
         caller.io.on('_JOINROOM', function( data) {
             console.log(data.roomName);
@@ -217,59 +228,36 @@ UserControl.prototype.setupSocketHandlers = (  caller ) => {
 }
 
 
+//Initialize a new game with the model object from
+// server on _JOINROOM (or _NEWGAME when it exists) event
+function UserModel( modelIn  ) {
 
-function UserModel(  ) {
-    this.playerOne = []; //list of moves
-    this.playerTwo = [];
+    this.myName = (typeof(playerName) == 'undefined') ? 'player1' : playerName;
+    this.playerOne= null;
+    this.playerTwo= null;
+    this.whosTurn = null;
+    this.plays    = null;
+    this.captures = null;
+    this.updateModel( modelIn );
+    
 }
 UserModel.prototype.getMoves = (  ) => {
-    return [ this.playerOne, this.playerTwo ];
+    return this.plays;
 }
-
-
-
-function GameToken( xyObjectIn ) {
-
-    this.x = 0;
-    this.y = 0;
-
-    if( typeof( xyObjectIn) !== 'undefined' ) {
-        try {
-            if(typeof( xyObjectIn.x) !== 'undefined' &&
-                typeof( xyObjectIn.y) !== 'undefined') {
-                this.x = xyObjectIn.x;
-                this.y = xyObjectIn.y;
-            } else {
-                throw "assignError";
-            }
-        }
-        catch (err) {
-            console.log("Bad assignment in gameToken constructor.")
-        }
-    }
+UserModel.prototype.getcaptures = ( ) => {
+    return this.captures;
 }
-GameToken.prototype.setPosition = ( xyObjectIn ) => {
-    if( typeof( xyObjectIn) !== 'undefined' ) {
-        try {
-            if(typeof( xyObjectIn.x) !== 'undefined' &&
-                typeof( xyObjectIn.y) !== 'undefined') {
-                this.x = xyObjectIn.x;
-                this.y = xyObjectIn.y;
-            } else {
-                throw "assignError";
-            }
-        }
-        catch(err) {
-            console.log("Bad assignment in gameToken setLocation.")
-        }
-    }
+UserModel.prototype.updateModel = ( modelIn ) => {
+
+    this.playerOne= modelIn.playerOne;
+    this.playerTwo= modelIn.playerTwo;
+    this.whosTurn = modelIn.whosTurn;
+    this.plays    = modelIn.plays;
+    this.captures = modelIn.captures;
 }
-GameToken.prototype.getPosition = ( ) => { return {x: this.x, y: this.y}; }
-
-
-
-
-
+UserModel.prototype.getMyName = () => {
+    return this.myName;
+}
 
 window.onload = function( ) {
     window.cont = new UserControl();

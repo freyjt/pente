@@ -41,13 +41,12 @@ function penteServer( ) {
 
                 if(!win) {
                     this.changePlayers( );
-                    io.emit('_GOODPLAY', openGames[payload.roomName] );
+                    io.to(payload.roomName).emit('_GOODPLAY', openGames[payload.roomName] );
                 } else {
-
-                    io.emit('_GAMEOVER', openGames[payload.roomName] );
+                    io.to(payload.roomName).emit('_GAMEOVER', openGames[payload.roomName] );
                 }
             } else {
-                io.emit('_PLAYERROR', openGames[paload.roomName]);
+                io.to(payload.roomName).emit('_PLAYERROR', openGames[paload.roomName]);
             }
         });
 
@@ -62,12 +61,12 @@ function penteServer( ) {
                 if(openGames[payload.roomName].passPhrase === payload.passPhrase){
                     openGames[payload.roomName].addPlayer( payload.playerId );
                     this.join( payload.roomName );
-                    io.emit('_JOINROOM', { roomName: payload.roomName } );
+                    io.to(payload.roomName).emit('_JOINROOM', openGames[payload.roomName] );
 
 
                 } else {
 
-                    io.emit('_JOINERROR', "Wrong passPhrase!");
+                    io.to(payload.roomName).emit('_JOINERROR', "Wrong passPhrase!");
 
                 }
                 console.log( openGames );
@@ -75,14 +74,14 @@ function penteServer( ) {
             } else if(typeof(openGames[payload.roomName]) !== "undefined"
                 && openGames[payload.roomName].numberPlaying >= 2) {
             
-                io.emit('_JOINERROR', "Too many playing in that room!");
+                io.to(payload.roomName).emit('_JOINERROR', "Too many playing in that room!");
 
             } else {
                 console.log("first: " + payload.passPhrase);
                 openGames[payload.roomName] = new GameState( payload.roomName, payload.playerId );
 
 
-                io.emit('_JOINROOM',  { roomName: payload.roomName }  );
+                io.to(payload.roomName).emit('_JOINROOM', openGames[payload.roomName] );
 
                 if( typeof(payload.passPhrase) !== 'undefined' && payload.passPhrase.length > 0) {
                     openGames[payload.roomName].setPassPhrase(payload.passPhrase, openGames[payload.roomName]);
@@ -97,15 +96,6 @@ function penteServer( ) {
 
     http.listen(3050);
 
-
-
-    var checkVictory   = ( payloadObject ) => {
-
-    }
-    //change the game state to win
-    var wonGame        = ( payloadObject ) => {
-
-    }
 } penteServer( );
 
 
@@ -140,9 +130,9 @@ GameState.prototype.initiatePlays = ( ) {
 }
 GameState.prototype.addPlayer = ( playerName ) => {
 
-    if(typeof(this.playerOne) === 'undefined') {
+    if(       this.playerOne.length === 0 || typeof(this.playerOne) === 'undefined') {
         this.playerOne = playerName;
-    } else if(this.playerTwo.length === 0 || typeof(this.playerTwo.length) === 'undefined') {
+    } else if(this.playerTwo.length === 0 || typeof(this.playerTwo) === 'undefined') {
         this.playerTwo = playerName;
     }
 }
@@ -220,7 +210,9 @@ GameState.prototype.checkVictory  = ( payload ) => {
         horizon  >= 5 ||
         vertical >= 5 ) {
             didWin = true;
-    }else {
+    }else { //*************************************
+        //END check if 5 in a row
+
         //check if capture
         var capCount = 0;
         var cap      = false;
@@ -242,8 +234,11 @@ GameState.prototype.checkVictory  = ( payload ) => {
     // 0, 1, -1
     function capture(dirUp, dirRight) {
         var isCapture = false;
-        var pYpass = (dirUp    < 0) ? pY >= 3 : pY < this.gridSize - 3;
-        var pXpass = (dirRight < 0) ? pX >= 3 : pX < this.gridSize - 3;
+        var pYpass = (dirUp    < 0) ? pY >= 3 : true;
+            pYpass = (dirUp    > 0) ? pY < this.gridSize - 3: true;
+        var pXpass = (dirRight < 0) ? pX >= 3 : true;
+            pXpass = (dirRight < 0) ? pX < this.gridSize - 3: true;
+
         if( pYpass && pXpass &&
             other  === this.plays[pX+dirRight*1][pY+dirUp*1] &&
             other  === this.plays[pX+dirRight*2][pY+dirUp*2] &&
@@ -252,6 +247,7 @@ GameState.prototype.checkVictory  = ( payload ) => {
                 removeCapture( [pX+dirRight*1, pY+dirUp*1],
                     [pX+dirRight*2,pY+dirUp*2]);
         }
+        return isCapture;
     }
     function removeCapture(token1, token2) {
         this.plays[token1.x][token1.y] = 0;
