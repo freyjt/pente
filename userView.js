@@ -136,6 +136,7 @@ function UserControl(   ) {
     var rescope_this = this;
     //Really affecting binding here soooo....do better
     var join_button = document.getElementById('roomJoin');
+
     join_button.onclick = function(evt) {
         var payload        = {};
         payload.roomName   = document.getElementById('whichRoom').value;
@@ -156,7 +157,7 @@ UserControl.prototype.renderView = ( newMove, caller ) => {
     var moves = caller.model.getMoves( );
 
     if(typeof(newMove) !== 'undefined') {
-        const moveCollides = caller.checkCollisions(moves, newMove);
+        const moveCollides = caller.model.checkCollisions( newMove );
         if( !moveCollides )  caller.view.render(moves, newMove, caller.view );
         else caller.view.renderText("You can't move there!");
     } else {
@@ -164,30 +165,13 @@ UserControl.prototype.renderView = ( newMove, caller ) => {
     }
 }
 UserControl.prototype.setRoomName = ( nameIn, caller ) => {
-
     caller.roomName = nameIn;
-}
-UserControl.prototype.checkCollisions = ( moves, newMove ) => {
-    var doesCollide = false
-    if(typeof(moves) !== 'undefined'){
-        for(var i = 0; i < moves.length; i++) {
-            if(typeof(moves[i]) !== 'undefined') {
-                for(var j = 0; j < moves[i].length; j++) {
-                    if( newMove.x === moves[i][j].x && newMove.y === moves[i][j].y ){
-                        doesCollide = true;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-    return doesCollide;
 }
 UserControl.prototype.makeMove = (movePlacement, caller) => {
     //check if it's your turn
-    if(()  ) {
-        var moves     = caller.model.getMoves( );
-        var collision = caller.checkCollisions( movePlacement );
+    var yourTurn = caller.model.getYourTurn( );
+    if( yourTurn ) {
+        var collision = caller.model.checkCollisions( movePlacement );
         if( !collision ) {
             caller.packageAndShip("play_made", movePlacement, caller);
         } else {
@@ -230,16 +214,26 @@ UserControl.prototype.setupSocketHandlers = (  caller ) => {
 
 //Initialize a new game with the model object from
 // server on _JOINROOM (or _NEWGAME when it exists) event
-function UserModel( modelIn  ) {
+function UserModel( modelIn ) {
+    //if the instantiating player is the first in the room
+    // the will go when whosTurn is true; else they are the 
+    // second in the room and will go when whosturn is fals
+    // This should be more robust to allow for changing first move
+    this.myTurn    = (modelIn.playerTwo.length > 0) ? false : true;
 
-    this.myName = (typeof(playerName) == 'undefined') ? 'player1' : playerName;
-    this.playerOne= null;
-    this.playerTwo= null;
-    this.whosTurn = null;
-    this.plays    = null;
-    this.captures = null;
+    this.roomName  = null;
+    this.playerOne = null;
+    this.playerTwo = null;
+    this.whosTurn  = null;
+    this.plays     = null;
+    this.captures  = null;
     this.updateModel( modelIn );
-    
+
+    //idea vars
+    this.gamesOne    = 0;
+    this.gamesPlayed = 0;
+    this.score       = {playerOne: 0, playerTwo: 0};
+
 }
 UserModel.prototype.getMoves = (  ) => {
     return this.plays;
@@ -248,16 +242,30 @@ UserModel.prototype.getcaptures = ( ) => {
     return this.captures;
 }
 UserModel.prototype.updateModel = ( modelIn ) => {
-
-    this.playerOne= modelIn.playerOne;
-    this.playerTwo= modelIn.playerTwo;
-    this.whosTurn = modelIn.whosTurn;
-    this.plays    = modelIn.plays;
-    this.captures = modelIn.captures;
+    this.roomName  = modelIn.roomName;
+    this.playerOne = modelIn.playerOne;
+    this.playerTwo = modelIn.playerTwo;
+    this.whosTurn  = modelIn.whosTurn;
+    this.plays     = modelIn.plays;
+    this.captures  = modelIn.captures;
 }
 UserModel.prototype.getMyName = () => {
     return this.myName;
 }
+UserModel.prototype.getYourTurn = ( ) => {
+    var yourTurn = false;
+    if(this.myTurn === this.whosTurn) { yourTurn = true; }
+    return yourTurn;
+}
+UserModel.prototype.checkCollisions = (newMove) => {
+    var collides = false;
+    if( this.plays[newMove.x][newMove.y] !== 0 ) {
+        collides = true;
+    }
+    return collides;
+}
+
+
 
 window.onload = function( ) {
     window.cont = new UserControl();
