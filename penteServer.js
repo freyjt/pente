@@ -299,5 +299,16 @@ GameState.prototype.checkCollision = ( payloadObject ) => {
     return collides;
 }
 GameState.prototype.getNumberPlaying = ( ) => {
-    if()
+    var number = 0;
+    if(this.playerOne.length > 0 ) number += 1;
+    if(this.playerTwo.length > 0 ) number += 2;
+    return number;
+}
+GameState.prototype.playerLeave = ( objectWithMyTurnBool ) => {
+    if(objectWithMyTurnBool.myTurn === true) {
+        this.playerOne = '';
+    } else {
+        this.playerTwo = '';
+    }
+    this.initiatePlays( );
 }

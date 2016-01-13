@@ -200,7 +200,9 @@ UserControl.prototype.makeMove = (movePlacement, caller) => {
         }
     }
 }
-
+UserControl.prototype.updateRoomList = ( data, caller ) {
+    
+}
 UserControl.prototype.packageAndShip = ( event, payload, controlObject ) => {
     if(typeof(payload.roomName) === 'undefined')
         payload.roomName = controlObject.model.getRoomName();
@@ -208,6 +210,9 @@ UserControl.prototype.packageAndShip = ( event, payload, controlObject ) => {
 }
 UserControl.prototype.setupSocketHandlers = (  caller ) => {
 
+        caller.io.on('_ROOMLIST', function( data) {
+            caller.updateRoomList( data, caller);
+        })
         caller.io.on('_PLAYMADE', function( data ) {
             caller.model.update( data );
             caller.view.render( caller.model.getMoves() );
