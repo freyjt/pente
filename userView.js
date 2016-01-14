@@ -231,7 +231,7 @@ UserControl.prototype.setupSocketHandlers = (  caller ) => {
         })
         caller.io.on('_GOODPLAY', function( data ) {
             caller.model.updateModel( data, caller.model );
-            caller.view.render( caller.model.getMoves() );
+            caller.view.render( caller.model.getMoves( caller.model ), undefined, caller.view );
         });
 
         caller.io.on('_GAMEOVER'), function( data ) {
