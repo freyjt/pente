@@ -9,14 +9,18 @@
         <table id="joinPanel">
             <tr>
                 <td><input type="text" id="whichRoom" placeholder="Room Name"/></td>
-                <td><button id="roomJoin">Join Room</button></td>
+                <td><button id="newGame">New Game</button></td>
             </tr>
             <tr>
                 <td><input type="text" id="passPhrase" placeholder="Pass Phrase"/></td>
+                <td><button id="roomLeave">LeaveRoom</button></td>
             </tr>
             <tr>
                 <td><input type="text" id="myName" placeholder="Your name"/></td>
-            <tr>
+                <td><button id="roomJoin">Join Room</button></td>
+            </tr>
+        </table>
+        <table id="gameRooms">   </table>
     </body>
     <script src="/socket.io/socket.io.js"></script>
 

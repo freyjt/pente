@@ -96,10 +96,8 @@ UserView.prototype.drawDots = function( playArr, playerMove, caller ) {
         }
     }
     if( typeof(playerMove) !== 'undefined' ) {
-
         caller.drawToken( playerMove, caller.newMoveColor, this);
-
-    } 
+    }
 }
 UserView.prototype.drawToken     = ( tokenIn, color, caller) => {
     var center = caller.getDrawCenter( tokenIn, caller );
@@ -136,14 +134,52 @@ UserView.prototype.getMyName = ( controller ) => {
 }
 UserView.prototype.getRoomName = ( controller ) => {
     var roomName = document.getElementById('whichRoom').value;
-    console.log("LL" + roomName);
     if(roomName.length === 0) {
         roomName = randomString( 10 );
         document.getElementById('whichRoom').value = roomName;
     }
     return roomName;
 }
-
+UserView.prototype.updateTable = ( caller  ) => {
+    var joinButton    = document.getElementById('roomJoin');
+    var leaveButton   = document.getElementById('roomLeave');
+    var newGameButton = document.getElementById('newGame');
+    var nameField     = document.getElementById('myName');
+    var roomField     = document.getElementById('whichRoom');
+    var passField     = document.getElementById('passPhrase');
+    var inProgress    = caller.control.getInProgress(caller.control);
+    //haven't joined yet
+    if(caller.control.model === null) {
+        newGameButton.disabled = true;
+        leaveButton.disabled = true;
+        joinButton.disabled  = false;
+        nameField.disabled   = false;
+        roomField.disabled   = false;
+        passField.disabled   = false;
+    } else { //you're in a room
+        newGameButton.disabled = false;
+        leaveButton.disabled = false;
+        joinButton.disabled  = true;
+        nameField.disabled   = true;
+        roomField.disabled   = true;
+        passField.disabled   = true;
+    }
+    if(inProgress) {
+        newGameButton.disabled = true;
+    } else {
+        newGameButton.disabled = false;
+    }
+    document.getElementById('gameRooms').innerHTML = "<tr><td>Games</td><td># playing</td></tr>";
+    var rowString = "";
+    for( game in caller.control.roomList ) {
+        row = document.createElement("tr");
+        rowString = "<td>" + caller.control.roomList[game].roomName;
+        rowString += "</td><td>" + caller.control.roomList[game].numberPlaying;
+        rowString += "</td>";
+        row.innerHTML = rowString;
+        document.getElementById('gameRooms').appendChild(row);
+    }
+}
 
 
 
@@ -152,7 +188,7 @@ function UserControl(   ) {
     this.model = null;
     this.roomName = "";
     this.io    = io( );
-
+    this.roomList = [];
     this.setupSocketHandlers( this );
     var rescope_this = this;
     //Really affecting binding here soooo....do better
@@ -182,7 +218,8 @@ UserControl.prototype.getInProgress= ( caller ) => {
 }
 UserControl.prototype.renderView = ( newMove, caller ) => {
     //check for colisions with model
-    if(caller.model !== null && caller.model.getInProgress( ) ) {
+    caller.view.updateTable(caller.view);
+    if(caller.model !== null && caller.model.getInProgress(caller.model) ) {
         if(typeof(newMove) !== 'undefined' && caller.model !== null) {
             var moves = caller.model.getMoves( caller.model );
             const moveCollides = caller.model.checkCollisions( newMove, caller.model );
@@ -223,7 +260,8 @@ UserControl.prototype.makeMove = (movePlacement, caller) => {
     } else { console.log("Game not yet begun."); }
 }
 UserControl.prototype.updateRoomList = ( data, caller ) => {
-
+    caller.roomList = data;
+    
 }
 UserControl.prototype.packageAndShip = ( event, payload, controlObject ) => {
     console.log( typeof(payload.roomName) );
@@ -255,14 +293,14 @@ UserControl.prototype.setupSocketHandlers = (  caller ) => {
         });
 
         caller.io.on('_JOINROOM', function( data) {
-            
-            console.log("::  " + caller.model);
+
             if( caller.model === null){
                 console.log(caller.model);
                 caller.model = new UserModel( data );
             }
             else caller.model.updateModel( data , caller.model);
 
+            caller.renderView(undefined, caller);
         });
 
         caller.io.on('_JOINERROR', function(  error ) {
@@ -270,6 +308,10 @@ UserControl.prototype.setupSocketHandlers = (  caller ) => {
             caller.view.renderText( error, 'error', caller.view );
         });
 
+        caller.io.on('_NEWGAME', function(data) {
+            caller.model.updateModel(data, caller.model);
+            caller.renderView(undefined, caller);
+        });
 }
 
 //Initialize a new game with the model object from
