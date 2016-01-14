@@ -185,7 +185,7 @@ GameState.prototype.checkVictory  = ( payload, caller) => {
     var didWin = false;
     var pX = payload.x;
     var pY = payload.y;
-    var player = ( this.whosTurn ) ? 1 : 2;
+    var player = ( caller.whosTurn ) ? 1 : 2;
     var otherP = ( player === 1  ) ? 2 : 1;
     //check if 5 in a row
     var downDiag = 1;
@@ -263,6 +263,7 @@ GameState.prototype.checkVictory  = ( payload, caller) => {
     }
     // 0, 1, -1
     function capture(dirUp, dirRight) {
+        console.log("[" + dirUp + "," + dirRight + "]");
         var isCapture = false;
         var pYpass = (dirUp    < 0) ? pY >= 3 : true;
             pYpass = (dirUp    > 0) ? pY < caller.gridSize - 3: true;

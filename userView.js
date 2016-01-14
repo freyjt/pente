@@ -182,13 +182,15 @@ UserControl.prototype.getInProgress= ( caller ) => {
 }
 UserControl.prototype.renderView = ( newMove, caller ) => {
     //check for colisions with model
-    if(typeof(newMove) !== 'undefined' && caller.model !== null) {
-        var moves = caller.model.getMoves( caller.model );
-        const moveCollides = caller.model.checkCollisions( newMove, caller.model );
-        if( !moveCollides )  caller.view.render(newMove, caller.view );
-        else caller.view.renderText("You can't move there!", "error", caller.view);
-    } else {
-        caller.view.render(undefined, caller.view);
+    if(caller.model !== null && caller.model.getInProgress( ) ) {
+        if(typeof(newMove) !== 'undefined' && caller.model !== null) {
+            var moves = caller.model.getMoves( caller.model );
+            const moveCollides = caller.model.checkCollisions( newMove, caller.model );
+            if( !moveCollides )  caller.view.render(newMove, caller.view );
+            else caller.view.renderText("You can't move there!", "error", caller.view);
+        } else {
+            caller.view.render(undefined, caller.view);
+        }
     }
 }
 UserControl.prototype.setRoomName = ( nameIn, caller ) => {
@@ -241,14 +243,16 @@ UserControl.prototype.setupSocketHandlers = (  caller ) => {
             caller.view.render( undefined, caller.view );
         });
 
-        caller.io.on('_GAMEOVER'), function( data ) {
+        caller.io.on('_GAMEOVER', function( data ) {
             //we don't flip the turn bit on serverSide
+            caller.model.updateModel( data, caller.model);
             if( data.whosTurn === caller.model.myTurn ) {
                 caller.view.renderText("You Win!", "end_of_game", caller.view);
             } else {
                 caller.view.renderText("You Lose!", "end_of_game", caller.view);
             }
-        }
+            caller.model.endGame( caller.model );
+        });
 
         caller.io.on('_JOINROOM', function( data) {
             
@@ -325,8 +329,8 @@ UserModel.prototype.checkCollisions = (newMove, caller) => {
 UserModel.prototype.getInProgress = ( caller ) => {
     return !caller.gameOver;
 }
-UserModel.prototype.endGame = ( ) => {
-    this.gameOver = false;
+UserModel.prototype.endGame = ( caller ) => {
+    caller.gameOver = true;
 }
 UserModel.prototype.getRoomName = (caller) => {
     return caller.roomName;
