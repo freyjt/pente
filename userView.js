@@ -47,20 +47,22 @@ function UserView(canID, initControlObject) {
 
 //get dots from control
 // package model on server ;)
-UserView.prototype.render  = ( dots, turnDot, caller ) => {
+UserView.prototype.render  = (turnDot, caller ) => {
+    var dots = caller.control.getMoves( caller.control );
 
     caller.context.fillStyle = caller.bgColor;
     caller.context.fillRect(0, 0, caller.sizeX, caller.sizeY);
-
     caller.drawGrid( caller );
     caller.drawDots( dots, turnDot, caller );
 
 }
 UserView.prototype.renderText = (textString, status, caller) => {
+    caller.render( undefined, caller);
     caller.context.globalAlpha = .5;
     caller.context.fillStyle = 'red';
     caller.context.fillRect(0,0, caller.sizeX, caller.sizeY);
     console.log(textString);
+    caller.context.globalAlpha = 1.0;
 }
 
 UserView.prototype.drawGrid = ( caller ) => {
@@ -183,14 +185,19 @@ UserControl.prototype.renderView = ( newMove, caller ) => {
     if(typeof(newMove) !== 'undefined' && caller.model !== null) {
         var moves = caller.model.getMoves( caller.model );
         const moveCollides = caller.model.checkCollisions( newMove, caller.model );
-        if( !moveCollides )  caller.view.render(moves, newMove, caller.view );
+        if( !moveCollides )  caller.view.render(newMove, caller.view );
         else caller.view.renderText("You can't move there!", "error", caller.view);
     } else {
-        caller.view.render( [ [] ], undefined, caller.view);
+        caller.view.render(undefined, caller.view);
     }
 }
 UserControl.prototype.setRoomName = ( nameIn, caller ) => {
     caller.roomName = nameIn;
+}
+UserControl.prototype.getMoves    = (caller ) => {
+    if(caller.model !== null)
+        return caller.model.getMoves( caller.model );
+    else return undefined;
 }
 UserControl.prototype.makeMove = (movePlacement, caller) => {
     //check if game is in progress
@@ -231,7 +238,7 @@ UserControl.prototype.setupSocketHandlers = (  caller ) => {
         })
         caller.io.on('_GOODPLAY', function( data ) {
             caller.model.updateModel( data, caller.model );
-            caller.view.render( caller.model.getMoves( caller.model ), undefined, caller.view );
+            caller.view.render( undefined, caller.view );
         });
 
         caller.io.on('_GAMEOVER'), function( data ) {

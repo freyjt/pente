@@ -284,10 +284,10 @@ GameState.prototype.checkVictory  = ( payload, caller) => {
     }
     function registerCapture( playerNumber ) {
         if(     playerNumber == 1 ) { 
-            return caller.captures.playerOne += 1; 
+            return ++caller.captures.playerOne; 
         }
         else if(playerNumber == 2 ) { 
-            return caller.captures.playerTwo += 1; 
+            return ++caller.captures.playerTwo; 
         }
     }
     return didWin;
