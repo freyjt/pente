@@ -39,20 +39,21 @@ function penteServer( ) {
         })
         socket.on('play_made', function(payload) {
             console.log( payload );
-            var collides = openGames[payload.roomName].checkCollision(payload);
+            var gameObject = openGames[payload.roomName];
+            var collides = gameObject.checkCollision(payload, gameObject);
             if(!collides) {
-                this.makePlay( payload );
+                gameObject.makePlay( payload, gameObject);
 
-                var win = checkVictory( payload );
+                var win = gameObject.checkVictory( payload, gameObject );
 
                 if(!win) {
-                    this.changePlayers( );
+                    gameObject.changePlayers( gameObject );
                     io.to(payload.roomName).emit('_GOODPLAY', openGames[payload.roomName] );
                 } else {
                     io.to(payload.roomName).emit('_GAMEOVER', openGames[payload.roomName] );
                 }
             } else {
-                io.to(payload.roomName).emit('_PLAYERROR', openGames[paload.roomName]);
+                io.to(payload.roomName).emit('_PLAYERROR', openGames[payload.roomName]);
             }
         });
 
@@ -177,10 +178,10 @@ GameState.prototype.setPassPhrase = ( passIn, mutator) => {
     console.log( this );
     mutator.passPhrase = passIn;
 }
-GameState.prototype.makePlay      = ( payload ) => {
-    this.plays[payload.x][payload.y] = (this.whosTurn) ? 1 : 2;
+GameState.prototype.makePlay      = ( payload, caller ) => {
+    caller.plays[payload.x][payload.y] = (caller.whosTurn) ? 1 : 2;
 }
-GameState.prototype.checkVictory  = ( payload ) => {
+GameState.prototype.checkVictory  = ( payload, caller) => {
     var didWin = false;
     var pX = payload.x;
     var pY = payload.y;
@@ -195,42 +196,42 @@ GameState.prototype.checkVictory  = ( payload ) => {
     // this is not beautiful, but we want to 
     //  keep it open until we stop, so for loops!
     for(i = 1; i < 5; i++) {
-        if(this.plays[pX-i][pY-i] === player )
+        if(caller.plays[pX-i][pY-i] === player )
             downDiag += 1;
         else break;
     }
     for(i = 1; i < 5; i++) {
-        if(this.plays[pX+i][pY+i] === player )
+        if(caller.plays[pX+i][pY+i] === player )
             downDiag += 1;
         else break;
     }
     for(i = 1; i < 5; i++) {
-        if(this.plays[pX-i][pY+i] === player )
+        if(caller.plays[pX-i][pY+i] === player )
             upDiag += 1;
         else break;
     }
     for(i = 1; i < 5; i++) {
-        if(this.plays[pX+i][pY-i] === player )
+        if(caller.plays[pX+i][pY-i] === player )
             upDiag += 1;
         else break;
     }
     for(i = 1; i < 5; i++) {
-        if(this.plays[pX-i][pY  ] === player )
+        if(caller.plays[pX-i][pY  ] === player )
             horizon += 1;
         else break;
     }
     for(i = 1; i < 5; i++) {
-        if(this.plays[pX+i][pY  ] === player )
+        if(caller.plays[pX+i][pY  ] === player )
             horizon += 1;
         else break;
     }
     for(i = 1; i < 5; i++) {
-        if(this.plays[pX  ][pY-i] === player )
+        if(caller.plays[pX  ][pY-i] === player )
             vertical += 1;
         else break;
     }
     for(i = 1; i < 5; i++) {
-        if(this.plays[pX  ][pY+i] === player)
+        if(caller.plays[pX  ][pY+i] === player)
             vertical += 1;
         else break;
     }
@@ -264,14 +265,14 @@ GameState.prototype.checkVictory  = ( payload ) => {
     function capture(dirUp, dirRight) {
         var isCapture = false;
         var pYpass = (dirUp    < 0) ? pY >= 3 : true;
-            pYpass = (dirUp    > 0) ? pY < this.gridSize - 3: true;
+            pYpass = (dirUp    > 0) ? pY < caller.gridSize - 3: true;
         var pXpass = (dirRight < 0) ? pX >= 3 : true;
-            pXpass = (dirRight < 0) ? pX < this.gridSize - 3: true;
+            pXpass = (dirRight < 0) ? pX < caller.gridSize - 3: true;
 
         if( pYpass && pXpass &&
-            other  === this.plays[pX+dirRight*1][pY+dirUp*1] &&
-            other  === this.plays[pX+dirRight*2][pY+dirUp*2] &&
-            player === this.plays[pX+dirRight*3][pY+dirUp*3] ) {
+            otherP  === caller.plays[pX+dirRight*1][pY+dirUp*1] &&
+            otherP  === caller.plays[pX+dirRight*2][pY+dirUp*2] &&
+            player  === caller.plays[pX+dirRight*3][pY+dirUp*3] ) {
                 isCapture = true;
                 removeCapture( [pX+dirRight*1, pY+dirUp*1],
                     [pX+dirRight*2,pY+dirUp*2]);
@@ -279,25 +280,25 @@ GameState.prototype.checkVictory  = ( payload ) => {
         return isCapture;
     }
     function removeCapture(token1, token2) {
-        this.plays[token1.x][token1.y] = 0;
-        this.plays[token2.x][token2.y] = 0;
+        caller.plays[token1.x][token1.y] = 0;
+        caller.plays[token2.x][token2.y] = 0;
     }
     function registerCapture( playerNumber ) {
         if(     playerNumber == 1 ) { 
-            return this.captures.playerOne += 1; 
+            return caller.captures.playerOne += 1; 
         }
         else if(playerNumber == 2 ) { 
-            return this.captures.playerTwo += 1; 
+            return caller.captures.playerTwo += 1; 
         }
     }
     return didWin;
 }
-GameState.prototype.changePlayers  = ( ) => {
-    this.whosTurn = !this.whosTurn;
+GameState.prototype.changePlayers  = ( caller ) => {
+    caller.whosTurn = !caller.whosTurn;
 }
-GameState.prototype.checkCollision = ( payloadObject ) => {
+GameState.prototype.checkCollision = ( payloadObject, caller ) => {
     var collides = false;
-    if( this.gridSize[payloadObject.x][payloadObject.y] !== 0) {
+    if( caller.plays[payloadObject.x][payloadObject.y] !== 0) {
         collides = true;
     }
     return collides;

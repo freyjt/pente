@@ -35,9 +35,13 @@ function UserView(canID, initControlObject) {
 
     });
     this.canvas.addEventListener("mousedown", function(evt) {
-        pos = getMousePosition(evt);
-        pos = registrantThis.transMouseToGrid( pos, registrantThis);
-        registrantThis.control.makeMove( pos, registrantThis.control );
+        if( registrantThis.control.getInProgress( registrantThis.control ) ){
+
+            pos = getMousePosition(evt);
+            pos = registrantThis.transMouseToGrid( pos, registrantThis);
+            registrantThis.control.makeMove( pos, registrantThis.control );
+
+        }
     });
 }
 
@@ -78,12 +82,14 @@ UserView.prototype.drawGrid = ( caller ) => {
 UserView.prototype.drawDots = function( playArr, playerMove, caller ) {
 
     //dots is an object of lists of xy objects
-    for(var i = 0; i < playArr.length; i++ ) {
-        for(var j = 0; j < playArr[i].length; j++) {
-            if( playArr[i][j] === 1 ) {
-                caller.drawToken({x: i, y: j}, caller.playerColors[0], caller);
-            } else if( playArr[i][j] === 2 ) {
-                caller.drawToken({x: i, y: j}, caller.playerColors[1], caller);
+    if(typeof(playArr) !== 'undefined') {
+        for(var i = 0; i < playArr.length; i++ ) {
+            for(var j = 0; j < playArr[i].length; j++) {
+                if( playArr[i][j] === 1 ) {
+                    caller.drawToken({x: i, y: j}, caller.playerColors[0], caller);
+                } else if( playArr[i][j] === 2 ) {
+                    caller.drawToken({x: i, y: j}, caller.playerColors[1], caller);
+                }
             }
         }
     }
@@ -166,11 +172,17 @@ function UserControl(   ) {
 
     this.renderView(undefined, this);
 }
+UserControl.prototype.getInProgress= ( caller ) => {
+    var inProgress = false;
+    if( caller.model !== null)
+        inProgress = caller.model.getInProgress( caller.model );
+    return inProgress;
+}
 UserControl.prototype.renderView = ( newMove, caller ) => {
     //check for colisions with model
     if(typeof(newMove) !== 'undefined' && caller.model !== null) {
-        var moves = caller.model.getMoves( );
-        const moveCollides = caller.model.checkCollisions( newMove );
+        var moves = caller.model.getMoves( caller.model );
+        const moveCollides = caller.model.checkCollisions( newMove, caller.model );
         if( !moveCollides )  caller.view.render(moves, newMove, caller.view );
         else caller.view.renderText("You can't move there!", "error", caller.view);
     } else {
@@ -183,13 +195,13 @@ UserControl.prototype.setRoomName = ( nameIn, caller ) => {
 UserControl.prototype.makeMove = (movePlacement, caller) => {
     //check if game is in progress
     if( caller.model !== null ) {
-        var gameInProgress = caller.model.getInProgress( );
+        var gameInProgress = caller.model.getInProgress( caller.model );
         if( gameInProgress ) {
             //check if it's your turn
             console.log( "inprog:: " + caller.model);
-            var yourTurn = caller.model.getYourTurn( );
+            var yourTurn = caller.model.getYourTurn( caller.model );
             if( yourTurn ) {
-                var collision = caller.model.checkCollisions( movePlacement );
+                var collision = caller.model.checkCollisions( movePlacement, caller.model );
                 if( !collision ) {
                     caller.packageAndShip("play_made", movePlacement, caller);
                 } else {
@@ -205,8 +217,11 @@ UserControl.prototype.updateRoomList = ( data, caller ) => {
 
 }
 UserControl.prototype.packageAndShip = ( event, payload, controlObject ) => {
-    if(typeof(payload.roomName) === 'undefined')
-        payload.roomName = controlObject.model.getRoomName();
+    console.log( typeof(payload.roomName) );
+    if(typeof(payload.roomName) === 'undefined'){
+        console.log( controlObject.model.getRoomName( controlObject.model ) );
+        payload.roomName = controlObject.model.getRoomName(controlObject.model);
+    }
     controlObject.io.emit(event, payload );
 }
 UserControl.prototype.setupSocketHandlers = (  caller ) => {
@@ -214,8 +229,8 @@ UserControl.prototype.setupSocketHandlers = (  caller ) => {
         caller.io.on('_ROOMLIST', function( data) {
             caller.updateRoomList( data, caller);
         })
-        caller.io.on('_PLAYMADE', function( data ) {
-            caller.model.update( data );
+        caller.io.on('_GOODPLAY', function( data ) {
+            caller.model.updateModel( data, caller.model );
             caller.view.render( caller.model.getMoves() );
         });
 
@@ -235,7 +250,7 @@ UserControl.prototype.setupSocketHandlers = (  caller ) => {
                 console.log(caller.model);
                 caller.model = new UserModel( data );
             }
-            else caller.model.updateModel( data );
+            else caller.model.updateModel( data , caller.model);
 
         });
 
@@ -275,8 +290,8 @@ function UserModel( modelIn ) {
     this.score       = {playerOne: 0, playerTwo: 0};
 
 }
-UserModel.prototype.getMoves = (  ) => {
-    return this.plays;
+UserModel.prototype.getMoves = ( caller ) => {
+    return caller.plays;
 }
 UserModel.prototype.getcaptures = ( ) => {
     return this.captures;
@@ -294,20 +309,20 @@ UserModel.prototype.updateModel = ( modelIn, caller ) => {
 UserModel.prototype.getMyName = () => {
     return this.myName;
 }
-UserModel.prototype.getYourTurn = ( ) => {
-    return this.myTurn === this.whosTurn;
+UserModel.prototype.getYourTurn = ( caller ) => {
+    return caller.myTurn === caller.whosTurn;
 }
-UserModel.prototype.checkCollisions = (newMove) => {
-    return this.plays[newMove.x][newMove.y] !== 0 ;
+UserModel.prototype.checkCollisions = (newMove, caller) => {
+    return caller.plays[newMove.x][newMove.y] !== 0 ;
 }
-UserModel.prototype.getInProgress = ( ) => {
-    return !this.gameOver;
+UserModel.prototype.getInProgress = ( caller ) => {
+    return !caller.gameOver;
 }
 UserModel.prototype.endGame = ( ) => {
     this.gameOver = false;
 }
-UserModel.prototype.getRoomName = ( ) => {
-    return this.roomName;
+UserModel.prototype.getRoomName = (caller) => {
+    return caller.roomName;
 }
 
 
