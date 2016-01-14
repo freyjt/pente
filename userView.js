@@ -49,13 +49,14 @@ UserView.prototype.render  = ( dots, turnDot, caller ) => {
     caller.context.fillRect(0, 0, caller.sizeX, caller.sizeY);
 
     caller.drawGrid( caller );
-    caller.drawDots( dots, turnDot );
+    caller.drawDots( dots, turnDot, caller );
 
 }
 UserView.prototype.renderText = (textString, status, caller) => {
     caller.context.globalAlpha = .5;
     caller.context.fillStyle = 'red';
     caller.context.fillRect(0,0, caller.sizeX, caller.sizeY);
+    console.log(textString);
 }
 
 UserView.prototype.drawGrid = ( caller ) => {
@@ -88,7 +89,7 @@ UserView.prototype.drawDots = function( playArr, playerMove, caller ) {
     }
     if( typeof(playerMove) !== 'undefined' ) {
 
-        this.drawToken( playerMove, undefined, this);
+        caller.drawToken( playerMove, caller.newMoveColor, this);
 
     } 
 }
@@ -171,7 +172,7 @@ UserControl.prototype.renderView = ( newMove, caller ) => {
         var moves = caller.model.getMoves( );
         const moveCollides = caller.model.checkCollisions( newMove );
         if( !moveCollides )  caller.view.render(moves, newMove, caller.view );
-        else caller.view.renderText("You can't move there!");
+        else caller.view.renderText("You can't move there!", "error", caller.view);
     } else {
         caller.view.render( [ [] ], undefined, caller.view);
     }
@@ -181,21 +182,24 @@ UserControl.prototype.setRoomName = ( nameIn, caller ) => {
 }
 UserControl.prototype.makeMove = (movePlacement, caller) => {
     //check if game is in progress
-    var gameInProgress = caller.model.getInProgress( );
-    if(gameInProgress) {
-        //check if it's your turn
-        var yourTurn = caller.model.getYourTurn( );
-        if( yourTurn ) {
-            var collision = caller.model.checkCollisions( movePlacement );
-            if( !collision ) {
-                caller.packageAndShip("play_made", movePlacement, caller);
+    if( caller.model !== null ) {
+        var gameInProgress = caller.model.getInProgress( );
+        if( gameInProgress ) {
+            //check if it's your turn
+            console.log( "inprog:: " + caller.model);
+            var yourTurn = caller.model.getYourTurn( );
+            if( yourTurn ) {
+                var collision = caller.model.checkCollisions( movePlacement );
+                if( !collision ) {
+                    caller.packageAndShip("play_made", movePlacement, caller);
+                } else {
+                    caller.view.renderText("Illegal move!", "error", caller.view);
+                }
             } else {
-                caller.view.renderText("Illegal move!", "error", caller.view);
+                caller.view.renderText("It's not your turn!", 'error', caller.view);
             }
-        } else {
-            caller.view.renderText("It's not your turn!", 'error', caller.view);
         }
-    }
+    } else { console.log("Game not yet begun."); }
 }
 UserControl.prototype.updateRoomList = ( data, caller ) => {
 
@@ -225,10 +229,14 @@ UserControl.prototype.setupSocketHandlers = (  caller ) => {
         }
 
         caller.io.on('_JOINROOM', function( data) {
-            console.log(data.roomName);
-            if( caller.model == null)
+            
+            console.log("::  " + caller.model);
+            if( caller.model === null){
+                console.log(caller.model);
                 caller.model = new UserModel( data );
+            }
             else caller.model.updateModel( data );
+
         });
 
         caller.io.on('_JOINERROR', function(  error ) {
@@ -245,9 +253,10 @@ function UserModel( modelIn ) {
     // the will go when whosTurn is true; else they are the 
     // second in the room and will go when whosturn is fals
     // This should be more robust
+    console.log( modelIn );
     this.myTurn    = true;
     //this is the very first instantiation
-    this.myTurn    = (modelIn.playerTwo.length > 0) ? false : true;
+    this.myTurn    = modelIn.myTurn;
     this.gameOver  = false;
 
 
@@ -257,8 +266,9 @@ function UserModel( modelIn ) {
     this.whosTurn  = null;
     this.plays     = null;
     this.captures  = null;
-    this.updateModel( modelIn );
 
+    this.updateModel( modelIn, this );
+    console.log(this);
     //idea vars
     this.gamesOne    = 0;
     this.gamesPlayed = 0;
@@ -271,13 +281,15 @@ UserModel.prototype.getMoves = (  ) => {
 UserModel.prototype.getcaptures = ( ) => {
     return this.captures;
 }
-UserModel.prototype.updateModel = ( modelIn ) => {
-    this.roomName  = modelIn.roomName;
-    this.playerOne = modelIn.playerOne;
-    this.playerTwo = modelIn.playerTwo;
-    this.whosTurn  = modelIn.whosTurn;
-    this.plays     = modelIn.plays;
-    this.captures  = modelIn.captures;
+UserModel.prototype.updateModel = ( modelIn, caller ) => {
+
+    caller.roomName  = modelIn.roomName;
+    caller.playerOne = modelIn.playerOne;
+    caller.playerTwo = modelIn.playerTwo;
+    caller.whosTurn  = modelIn.whosTurn;
+    caller.plays     = modelIn.plays;
+    caller.captures  = modelIn.captures;
+
 }
 UserModel.prototype.getMyName = () => {
     return this.myName;
@@ -289,7 +301,7 @@ UserModel.prototype.checkCollisions = (newMove) => {
     return this.plays[newMove.x][newMove.y] !== 0 ;
 }
 UserModel.prototype.getInProgress = ( ) => {
-    return this.gameOver;
+    return !this.gameOver;
 }
 UserModel.prototype.endGame = ( ) => {
     this.gameOver = false;

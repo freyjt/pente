@@ -66,8 +66,12 @@ function penteServer( ) {
 
                 if(openGames[payload.roomName].passPhrase === payload.passPhrase){
                     openGames[payload.roomName].addPlayer( payload.playerId, openGames[payload.roomName] );
+
+                    var payloadOut = openGames[payload.roomName];
+                    payloadOut.myTurn = false;
+
                     this.join( payload.roomName );
-                    io.to(payload.roomName).emit('_JOINROOM', openGames[payload.roomName] );
+                    io.to(payload.roomName).emit('_JOINROOM', payloadOut );
 
                 } else {
 
@@ -84,16 +88,17 @@ function penteServer( ) {
             } else {
                 console.log("first: " + payload.passPhrase);
                 openGames[payload.roomName] = new GameState( payload.roomName, payload.playerId );
-
-
-                io.to(payload.roomName).emit('_JOINROOM', openGames[payload.roomName] );
+                var payloadOut = openGames[payload.roomName];
+                    payloadOut.myTurn = true;
+                this.join( payload.roomName );
+                
 
                 if( typeof(payload.passPhrase) !== 'undefined' && payload.passPhrase.length > 0) {
                     openGames[payload.roomName].setPassPhrase(payload.passPhrase, openGames[payload.roomName]);
-                    this.join( payload.roomName );
+                    
                 }
-
-                console.log(openGames);
+                io.to(payload.roomName).emit('_JOINROOM', payloadOut );
+                console.log("Room created: " + payload.roomName);
             }
         });
 
@@ -126,7 +131,7 @@ function generateRoomList( openGames ) {
 
 
 function GameState( roomName, player1) {
-    this.gridSize   = 19;
+    this.gridSize   = 20;
     this.roomName   = roomName;
     if(typeof(player1) !== 'undefined')
         this.playerOne  = player1;
