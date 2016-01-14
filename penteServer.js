@@ -268,21 +268,19 @@ GameState.prototype.checkVictory  = ( payload, caller) => {
             pYpass = (dirUp    > 0) ? pY < caller.gridSize - 3: true;
         var pXpass = (dirRight < 0) ? pX >= 3 : true;
             pXpass = (dirRight < 0) ? pX < caller.gridSize - 3: true;
-        console.log("****@*@*@**@*@*@*@**");
         if( pYpass && pXpass &&
             otherP  === caller.plays[pX+dirRight*1][pY+dirUp*1] &&
             otherP  === caller.plays[pX+dirRight*2][pY+dirUp*2] &&
             player  === caller.plays[pX+dirRight*3][pY+dirUp*3] ) {
                 isCapture = true;
-                console.log("*************_______*********");
                 removeCapture( [pX+dirRight*1, pY+dirUp*1],
                     [pX+dirRight*2,pY+dirUp*2]);
         }
         return isCapture;
     }
     function removeCapture(token1, token2) {
-        caller.plays[token1.x][token1.y] = 0;
-        caller.plays[token2.x][token2.y] = 0;
+        caller.plays[token1[0]][token1[1]] = 0;
+        caller.plays[token2[0]][token2[1]] = 0;
     }
     function registerCapture( playerNumber ) {
         if(     playerNumber == 1 ) { 
