@@ -249,7 +249,7 @@ GameState.prototype.checkVictory  = ( payload, caller) => {
         for(i = -1; i <= 1; i++) {
             for(j = -1; j <= 1; j++) {
                 cap = false;
-                if(j != 0 && i != 0) {
+                if(!(j === 0 && i === 0)) {
                     cap = capture(i, j);
                     if( cap ) {
                         capCount = registerCapture(player);
@@ -268,12 +268,13 @@ GameState.prototype.checkVictory  = ( payload, caller) => {
             pYpass = (dirUp    > 0) ? pY < caller.gridSize - 3: true;
         var pXpass = (dirRight < 0) ? pX >= 3 : true;
             pXpass = (dirRight < 0) ? pX < caller.gridSize - 3: true;
-
+        console.log("****@*@*@**@*@*@*@**");
         if( pYpass && pXpass &&
             otherP  === caller.plays[pX+dirRight*1][pY+dirUp*1] &&
             otherP  === caller.plays[pX+dirRight*2][pY+dirUp*2] &&
             player  === caller.plays[pX+dirRight*3][pY+dirUp*3] ) {
                 isCapture = true;
+                console.log("*************_______*********");
                 removeCapture( [pX+dirRight*1, pY+dirUp*1],
                     [pX+dirRight*2,pY+dirUp*2]);
         }
