@@ -66,7 +66,7 @@ function penteServer( ) {
             
             console.log( typeof(payload.passPhrase) );
      
-            io.emit('list_rooms', "list rooms from server");
+           
 
             if( typeof( openGames[payload.roomName] ) !== "undefined" && openGames[payload.roomName].numberPlaying() < 2) {
 
@@ -120,7 +120,7 @@ function generateRoomList( openGames ) {
     var roomList      = [];
     var numberPlaying = 0;
     for( room in openGames ) {
-        numberPlaying = openGames[room].getNumberPlaying( );
+        numberPlaying = openGames[room].getNumberPlaying(openGames[room]);
         //////
         //@@@@@@@TODO
         //WE'RE CLEARING OUT DEAD WOOD HERE, THAT'S KINDA A TERRIBLE
@@ -313,10 +313,10 @@ GameState.prototype.checkCollision = ( payloadObject, caller ) => {
     }
     return collides;
 }
-GameState.prototype.getNumberPlaying = ( ) => {
+GameState.prototype.getNumberPlaying = ( caller ) => {
     var number = 0;
-    if(this.playerOne.length > 0 ) number += 1;
-    if(this.playerTwo.length > 0 ) number += 2;
+    if(caller.playerOne.length > 0 ) number += 1;
+    if(caller.playerTwo.length > 0 ) number += 2;
     return number;
 }
 GameState.prototype.playerLeave = ( objectWithMyTurnBool ) => {

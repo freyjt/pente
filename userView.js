@@ -188,6 +188,7 @@ function UserControl(   ) {
     this.model = null;
     this.roomName = "";
     this.io    = io( );
+    this.io.emit('list_rooms', "Initial room request from client.");
     this.roomList = [];
     this.setupSocketHandlers( this );
     var rescope_this = this;
@@ -202,12 +203,21 @@ function UserControl(   ) {
             payload.passPhrase = document.getElementById('passPhrase').value;
             payload.playerId   = rescope_this.view.getMyName( rescope_this);
             rescope_this.packageAndShip('join_room', payload, rescope_this );
+            rescope_this.renderView(undefined, rescope_this);
         } else {
             document.getElementById('whichRoom').value = "Must select room name.";
         }
         
     }
-
+    var leave_button = document.getElementById('roomLeave');
+    leave_button.onclick = function(evt) {
+        var payload = {};
+        payload.roomName = rescope_this.view.getRoomName( );
+        payload.myTurn   = rescope_this.model.getMyTurn( rescope_this.model );
+        rescope_this.packageAndShip('leave_room', payload, rescope_this);
+        rescope_this.model == null;
+        rescope_this.renderView(undefined, rescope_this);
+    }
     this.renderView(undefined, this);
 }
 UserControl.prototype.getInProgress= ( caller ) => {
@@ -261,7 +271,7 @@ UserControl.prototype.makeMove = (movePlacement, caller) => {
 }
 UserControl.prototype.updateRoomList = ( data, caller ) => {
     caller.roomList = data;
-    
+    caller.renderView(undefined, caller );
 }
 UserControl.prototype.packageAndShip = ( event, payload, controlObject ) => {
     console.log( typeof(payload.roomName) );
@@ -301,6 +311,7 @@ UserControl.prototype.setupSocketHandlers = (  caller ) => {
             else caller.model.updateModel( data , caller.model);
 
             caller.renderView(undefined, caller);
+            caller.io.emit('list_rooms', "room request from client");
         });
 
         caller.io.on('_JOINERROR', function(  error ) {
@@ -377,7 +388,9 @@ UserModel.prototype.endGame = ( caller ) => {
 UserModel.prototype.getRoomName = (caller) => {
     return caller.roomName;
 }
-
+UserModel.prototype.getMyTurn   = (caller) => {
+    return caller.myTurn;
+}
 
 window.onload = function( ) {
     window.cont = new UserControl();
