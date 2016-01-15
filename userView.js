@@ -181,7 +181,7 @@ UserView.prototype.updateTable = ( caller  ) => {
         var pString = "";
             pString += "<tr>";
             pString += "<td colspan=\"2\">" + caller.control.model.playerOne + "</td></tr>";
-            pString += "<tr><td>Caps:</td><td>" + caller.control.model.captures.playerTwo + "</td></tr>"
+            pString += "<tr><td>Caps:</td><td>" + caller.control.model.captures.playerOne + "</td></tr>"
         tab.innerHTML = pString;
         document.getElementById('PlayerOne').innerHTML = "";
         document.getElementById('PlayerOne').appendChild(tab);

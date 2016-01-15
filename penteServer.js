@@ -279,7 +279,7 @@ GameState.prototype.checkVictory  = ( payload, caller) => {
     }
     // 0, 1, -1
     function capture(dirUp, dirRight) {
-        console.log("[" + dirUp + "," + dirRight + "]");
+        // console.log("[" + dirUp + "," + dirRight + "]");
         var isCapture = false;
         var pYpass = (dirUp    < 0) ? pY >= 3 : true;
             pYpass = (dirUp    > 0) ? pY < caller.gridSize - 3: true;
@@ -300,10 +300,10 @@ GameState.prototype.checkVictory  = ( payload, caller) => {
         caller.plays[token2[0]][token2[1]] = 0;
     }
     function registerCapture( player ) {
-        if(     player == 1 ) { 
+        if(     player === 1 ) { 
             return ++caller.captures.playerOne; 
         }
-        else if(player == 2 ) { 
+        else if(player === 2 ) { 
             return ++caller.captures.playerTwo; 
         }
     }
@@ -322,7 +322,7 @@ GameState.prototype.checkCollision = ( payloadObject, caller ) => {
 GameState.prototype.getNumberPlaying = ( caller ) => {
     var number = 0;
     if(caller.playerOne.length > 0 ) number += 1;
-    if(caller.playerTwo.length > 0 ) number += 2;
+    if(caller.playerTwo.length > 0 ) number += 1;
     return number;
 }
 GameState.prototype.playerLeave = ( objectWithMyTurnBool ) => {
