@@ -11,7 +11,6 @@ function penteServer( ) {
     var openGames = {};
     app.get('/potato', function(req, res) {
         res.send("YOu got a potato");
-        // console.log(req);
     });
 
     //100% of there being a better way to do this
@@ -52,7 +51,6 @@ function penteServer( ) {
         // to all ....kinda super exploitable though...
         // @todo find a more robust solution
         socket.on('list_rooms', function( data ) {
-            console.log(data);
             sendRoomList(io, openGames);
         });
 
@@ -65,7 +63,6 @@ function penteServer( ) {
         });    
 
         socket.on('play_made', function(payload) {
-            console.log( payload );
             var gameObject = openGames[payload.roomName];
             var collides = gameObject.checkCollision(payload, gameObject);
             if(!collides) {
@@ -85,9 +82,7 @@ function penteServer( ) {
         });
         socket.on('new_game', function(payload) {
             console.log('new_game called');
-            console.log(openGames[payload.roomName]);
             openGames[payload.roomName].resetGame( openGames[payload.roomName] );
-            console.log(openGames[payload.roomName]);
             io.to(payload.roomName).emit('_NEWGAME', openGames[payload.roomName] );
         });
         socket.on('join_room', function(payload) {
@@ -98,10 +93,10 @@ function penteServer( ) {
             if( typeof( openGames[payload.roomName] ) !== "undefined" && openGames[payload.roomName].numberPlaying() < 2) {
                 socket._CURRENTROOM = payload.roomName;
                 if(openGames[payload.roomName].passPhrase === payload.passPhrase){
-                    openGames[payload.roomName].addPlayer( payload.playerId, openGames[payload.roomName] );
+                    
 
                     var payloadOut = openGames[payload.roomName];
-                    payloadOut.myTurn = false;
+                    payloadOut.myTurn = openGames[payload.roomName].addPlayer( payload.playerId, openGames[payload.roomName] );
 
                     this.join( payload.roomName );
                     io.to(payload.roomName).emit('_JOINROOM', payloadOut );
@@ -111,7 +106,6 @@ function penteServer( ) {
                     io.to(payload.roomName).emit('_JOINERROR', "Wrong passPhrase!");
 
                 }
-                console.log( openGames );
 
             } else if(typeof(openGames[payload.roomName]) !== "undefined"
                 && openGames[payload.roomName].numberPlaying >= 2) {
@@ -119,7 +113,6 @@ function penteServer( ) {
                 io.to(payload.roomName).emit('_JOINERROR', "Too many playing in that room!");
 
             } else {
-                console.log("first: " + payload.passPhrase);
                 socket._CURRENTROOM = payload.roomName;
                 openGames[payload.roomName] = new GameState( payload.roomName, payload.playerId );
                 var payloadOut = openGames[payload.roomName];
@@ -195,12 +188,15 @@ GameState.prototype.initiatePlays = ( caller ) => {
     }
 }
 GameState.prototype.addPlayer = ( playerName, caller ) => {
-
+    var myTurn = false; //return value to indicate where player should be turning
     if( typeof(caller.playerOne) === 'undefined' || caller.playerOne.length === 0 ) {
         caller.playerOne = playerName;
+        myTurn = true;
     } else if( typeof(caller.playerTwo) === 'undefined' || caller.playerTwo.length === 0 ) {
         caller.playerTwo = playerName;
+        myTurn = false;
     }
+    return myTurn;
 }
 
 //@TODO this is always returning two, preventing you from
@@ -212,7 +208,6 @@ GameState.prototype.numberPlaying = ( ) => {
     return numPlaying;
 }
 GameState.prototype.setPassPhrase = ( passIn, mutator) => {
-    console.log( this );
     mutator.passPhrase = passIn;
 }
 GameState.prototype.makePlay      = ( payload, caller ) => {
@@ -300,7 +295,6 @@ GameState.prototype.checkVictory  = ( payload, caller) => {
     }
     // 0, 1, -1
     function capture(dirUp, dirRight) {
-        // console.log("[" + dirUp + "," + dirRight + "]");
         var isCapture = false;
         var pYpass = (dirUp    < 0) ? pY >= 3 : true;
             pYpass = (dirUp    > 0) ? pY < caller.gridSize - 3: true;
@@ -353,7 +347,7 @@ GameState.prototype.playerLeave = ( myTurnBool, caller ) => {
         caller.playerTwo = '';
     }
     caller.initiatePlays( caller );
-    caller.whosTurn = myTurnBool;
+    caller.whosTurn = !myTurnBool;
     caller.captures = { playerOne: 0, playerTwo: 0 };
 }
 

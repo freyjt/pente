@@ -21,7 +21,7 @@ function UserView(canID, initControlObject) {
     this.gameTokenRad = (this.gridSize / 2) - 2;
     ////dynamizeMe
     this.bgColor      = "#ffffff";
-    this.playerColors = ['#ff00ff', '#00ff00'];
+    this.playerColors = ['DarkOrchid', 'CornflowerBlue'];
     this.newMoveColor = "#aabbcc";
     this.gridColor    = "#000000";
 
@@ -58,11 +58,22 @@ UserView.prototype.render  = (turnDot, caller ) => {
 }
 UserView.prototype.renderText = (textString, status, caller) => {
     caller.render( undefined, caller);
-    caller.context.globalAlpha = .5;
-    caller.context.fillStyle = 'red';
+    caller.context.globalAlpha = .2;
+    caller.context.fillStyle   = 'grey';
+    if( status == 'error')
+        caller.context.fillStyle = 'GreenYellow';
+    else if(status === 'end_of_game')
+        caller.context.fillStyle = 'grey';
     caller.context.fillRect(0,0, caller.sizeX, caller.sizeY);
-    console.log(textString);
+    caller.context.font = "40px Arial";
+
     caller.context.globalAlpha = 1.0;
+    caller.context.fillStyle = 'GreenYellow';
+    caller.context.fillRect(0, caller.sizeY - 50, caller.sizeX, 50);
+    caller.context.fillStyle = 'MediumSlateBlue';
+    caller.context.fillText(textString, 10, caller.sizeY - 10);
+    console.log(textString);
+    
 }
 
 UserView.prototype.drawGrid = ( caller ) => {
@@ -141,6 +152,10 @@ UserView.prototype.getRoomName = ( controller ) => {
     return roomName;
 }
 UserView.prototype.updateTable = ( caller  ) => {
+
+    document.getElementById('PlayerOne').style.background = caller.playerColors[0];
+    document.getElementById('PlayerTwo').style.background = caller.playerColors[1];
+        
     var joinButton    = document.getElementById('roomJoin');
     var leaveButton   = document.getElementById('roomLeave');
     var newGameButton = document.getElementById('newGame');
@@ -163,6 +178,7 @@ UserView.prototype.updateTable = ( caller  ) => {
         nameField.disabled   = true;
         roomField.disabled   = true;
         passField.disabled   = true;
+
         if(inProgress) {
             if(caller.control.model.whosTurn === true) {
                 document.getElementById('PlayerOne').className = "playerTurn";
@@ -198,12 +214,22 @@ UserView.prototype.updateTable = ( caller  ) => {
     document.getElementById('gameRooms').innerHTML = "<tr><td>Games</td><td># playing</td></tr>";
     var rowString = "";
     for( game in caller.control.roomList ) {
-        row = document.createElement("tr");
-        rowString = "<td>" + caller.control.roomList[game].roomName;
+        var row = document.createElement("tr");
+        var scopeName = caller.control.roomList[game].roomName;
+        rowString = "<td>" + scopeName
         rowString += "</td><td>" + caller.control.roomList[game].numberPlaying;
         rowString += "</td>";
         row.innerHTML = rowString;
+        setUpRowOnClick(row, scopeName);
         document.getElementById('gameRooms').appendChild(row);
+        delete row;
+    }
+
+
+    function setUpRowOnClick(row, name) {
+        row.onclick = function(evt) {
+            document.getElementById('whichRoom').value = "" + name;
+        };
     }
  
 }
@@ -326,6 +352,7 @@ UserControl.prototype.setupSocketHandlers = (  caller ) => {
         caller.io.on('_GAMEOVER', function( data ) {
             //we don't flip the turn bit on serverSide
             caller.model.updateModel( data, caller.model);
+            caller.renderView(undefined, caller);
             if( data.whosTurn === caller.model.myTurn ) {
                 caller.view.renderText("You Win!", "end_of_game", caller.view);
             } else {
