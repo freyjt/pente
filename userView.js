@@ -165,12 +165,12 @@ UserView.prototype.updateTable = ( caller  ) => {
         passField.disabled   = true;
         if(inProgress) {
             if(caller.control.model.whosTurn === true) {
-                document.getElementById('PlayerOne').class = "playerTurn";
-                document.getElementById("PlayerTwo").class = "";
+                document.getElementById('PlayerOne').className = "playerTurn";
+                document.getElementById("PlayerTwo").className = "";
 
             } else {
-                document.getElementById('PlayerOne').class = "";
-                document.getElementById("PlayerTwo").class = "playerTurn";
+                document.getElementById('PlayerOne').className = "";
+                document.getElementById("PlayerTwo").className = "playerTurn";
             }
             newGameButton.disabled = true;
         } else {
@@ -357,6 +357,25 @@ UserControl.prototype.setupSocketHandlers = (  caller ) => {
             caller.model.startGame(caller.model);
             caller.renderView(undefined, caller);
         });
+
+        // on other client disconnect
+        caller.io.on('_REQPRESENCE', function(data) {
+            var payload = {};
+            console.log("Reqest for presence made");
+            payload.roomName = caller.view.getRoomName( );
+            payload.myTurn   = caller.model.getMyTurn(caller.model);
+            caller.io.emit('client_present', payload);
+        });
+
+        caller.io.on('_PLAYERLEFT', function(data) {
+
+            var name = caller.model.getOpponentName(caller.model);
+            caller.view.renderText(name + ' left!!', 'error', caller.view);
+            caller.io.emit('list_rooms', "room request from client");
+            caller.model.updateModel(data, caller.model);
+
+            caller.renderView(undefined, caller);
+        })
 }
 
 //Initialize a new game with the model object from
@@ -428,6 +447,18 @@ UserModel.prototype.getRoomName = (caller) => {
 UserModel.prototype.getMyTurn   = (caller) => {
     return caller.myTurn;
 }
+UserModel.prototype.getOpponentName = (caller) => {
+    if(caller.myTurn === true) {
+        return caller.playerTwo;
+    } else {
+        return caller.playerOne;
+    }
+}
+
+
+
+
+
 
 window.onload = function( ) {
     window.cont = new UserControl();
@@ -466,3 +497,4 @@ function randomString( length ) {
     }
     return stringOut;
 }
+

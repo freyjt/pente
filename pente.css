@@ -5,6 +5,7 @@ td#PlayerTwo {
     background: #00ff00;
 }
 td.playerTurn {
+    border: 2px solid black;
     background: red;
 }
 td {

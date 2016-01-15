@@ -11,7 +11,7 @@ function penteServer( ) {
     var openGames = {};
     app.get('/potato', function(req, res) {
         res.send("YOu got a potato");
-        console.log(req);
+        // console.log(req);
     });
 
     //100% of there being a better way to do this
@@ -33,6 +33,21 @@ function penteServer( ) {
     io.on('connection', function(socket) {
 
         console.log("new connection on socket");
+        socket.on('disconnect', function() {
+            //ask the room who is still there
+            console.log("disconnect from: " + socket._CURRENTROOM);
+            if(typeof(socket._CURRENTROOM) !== 'undefined'){
+                if(openGames[socket._CURRENTROOM].getNumberPlaying(openGames[socket._CURRENTROOM]) < 2) {
+                    delete openGames[socket._CURRENTROOM];
+                } else {
+                    io.to(socket._CURRENTROOM).emit('_REQPRESENCE', undefined);
+                }
+            }
+        });
+        socket.on('client_present', function(data) {
+            openGames[data.roomName].playerLeave(!data.myTurn, openGames[data.roomName]);
+            io.to(data.roomName).emit('_PLAYERLEFT', openGames[data.roomName]);
+        })
         //whenever one requests a room list, we can send
         // to all ....kinda super exploitable though...
         // @todo find a more robust solution
@@ -40,12 +55,15 @@ function penteServer( ) {
             console.log(data);
             sendRoomList(io, openGames);
         });
+
         socket.on('leave_room', function( data ) {
             console.log("Room Left: " + data.roomName);
             openGames[data.roomName].playerLeave(data.myTurn, openGames[data.roomName]);
+            io.to(data.roomName).emit('_PLAYERLEFT', openGames[data.roomName]);
             this.leave(data.roomName);
             sendRoomList(io, openGames);
-        });        
+        });    
+
         socket.on('play_made', function(payload) {
             console.log( payload );
             var gameObject = openGames[payload.roomName];
@@ -77,10 +95,8 @@ function penteServer( ) {
             
             console.log( typeof(payload.passPhrase) );
      
-           
-
             if( typeof( openGames[payload.roomName] ) !== "undefined" && openGames[payload.roomName].numberPlaying() < 2) {
-
+                socket._CURRENTROOM = payload.roomName;
                 if(openGames[payload.roomName].passPhrase === payload.passPhrase){
                     openGames[payload.roomName].addPlayer( payload.playerId, openGames[payload.roomName] );
 
@@ -104,6 +120,7 @@ function penteServer( ) {
 
             } else {
                 console.log("first: " + payload.passPhrase);
+                socket._CURRENTROOM = payload.roomName;
                 openGames[payload.roomName] = new GameState( payload.roomName, payload.playerId );
                 var payloadOut = openGames[payload.roomName];
                     payloadOut.myTurn = true;
@@ -185,11 +202,7 @@ GameState.prototype.addPlayer = ( playerName, caller ) => {
         caller.playerTwo = playerName;
     }
 }
-GameState.prototype.resetGame = ( caller ) => {
-    caller.initiatePlays( caller );
-    caller.captures = { playerOne: 0, playerTwo: 0 };
-    caller.whosTurn = !caller.whosTurn; //Loser of last game goes first
-}
+
 //@TODO this is always returning two, preventing you from
 //  testing other functionality
 GameState.prototype.numberPlaying = ( ) => {
@@ -339,5 +352,13 @@ GameState.prototype.playerLeave = ( myTurnBool, caller ) => {
     } else {
         caller.playerTwo = '';
     }
-    caller.initiatePlays(caller);
+    caller.initiatePlays( caller );
+    caller.whosTurn = myTurnBool;
+    caller.captures = { playerOne: 0, playerTwo: 0 };
+}
+
+GameState.prototype.resetGame = ( caller ) => {
+    caller.initiatePlays( caller );
+    caller.captures = { playerOne: 0, playerTwo: 0 };
+    caller.whosTurn = !caller.whosTurn; //Loser of last game goes first
 }
