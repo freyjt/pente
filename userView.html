@@ -2,22 +2,31 @@
 <html lang="en">
     <head>
         <title>Pente!</title>
+        <link rel="stylesheet" href="pente.css">
     </head>
 
     <body>
         <canvas id="gameCanvas" height="500px" width="500px" style="border: 1px solid black;">Your browser does not support the Canvas object!!!!</canvas>
-        <table id="joinPanel">
+        <table id="joinPanel" style="border: 1px solid black">
             <tr>
-                <td><input type="text" id="whichRoom" placeholder="Room Name"/></td>
-                <td><button id="newGame">New Game</button></td>
+                <td width="90">Your Name:</td>
+                <td width="100"><input size="10" type="text" id="myName" placeholder="Your name"/></td>
+
+                <td width="95"><button id="newGame">New Game</button></td>
+                <td width="100" rowspan="3" id="PlayerOne"></td>
+                <td width="100" rowspan="3" id="PlayerTwo"></td>
             </tr>
             <tr>
-                <td><input type="text" id="passPhrase" placeholder="Pass Phrase"/></td>
+                <td>Room Name:</td>
+                <td><input size="10" type="text" id="whichRoom" placeholder="Room Name"/></td>
+
                 <td><button id="roomLeave">LeaveRoom</button></td>
             </tr>
             <tr>
-                <td><input type="text" id="myName" placeholder="Your name"/></td>
+                <td>Pass Phrase:</td>
+                <td><input size="10"type="text" id="passPhrase" placeholder="Pass Phrase"/></td>
                 <td><button id="roomJoin">Join Room</button></td>
+
             </tr>
         </table>
         <table id="gameRooms">   </table>

@@ -157,18 +157,44 @@ UserView.prototype.updateTable = ( caller  ) => {
         roomField.disabled   = false;
         passField.disabled   = false;
     } else { //you're in a room
-        newGameButton.disabled = false;
+        // newGameButton.disabled = false;
         leaveButton.disabled = false;
         joinButton.disabled  = true;
         nameField.disabled   = true;
         roomField.disabled   = true;
         passField.disabled   = true;
+        if(inProgress) {
+            if(caller.control.model.whosTurn === true) {
+                document.getElementById('PlayerOne').class = "playerTurn";
+                document.getElementById("PlayerTwo").class = "";
+
+            } else {
+                document.getElementById('PlayerOne').class = "";
+                document.getElementById("PlayerTwo").class = "playerTurn";
+            }
+            newGameButton.disabled = true;
+        } else {
+            newGameButton.disabled = false;
+        }
+        var tab = document.createElement('table');
+        //@todo, have you just given up entirely?
+        var pString = "";
+            pString += "<tr>";
+            pString += "<td colspan=\"2\">" + caller.control.model.playerOne + "</td></tr>";
+            pString += "<tr><td>Caps:</td><td>" + caller.control.model.captures.playerTwo + "</td></tr>"
+        tab.innerHTML = pString;
+        document.getElementById('PlayerOne').innerHTML = "";
+        document.getElementById('PlayerOne').appendChild(tab);
+        
+        tab = document.createElement('table');
+        pString = "<tr><td colspan=\"2\">" + caller.control.model.playerTwo + "</td></tr>";
+        pString += "<tr><td>Caps:</td><td>" + caller.control.model.captures.playerTwo + "</td></tr>";
+        tab.innerHTML  = pString;
+        document.getElementById('PlayerTwo').innerHTML = "";
+        document.getElementById('PlayerTwo').appendChild(tab);
+
     }
-    if(inProgress) {
-        newGameButton.disabled = true;
-    } else {
-        newGameButton.disabled = false;
-    }
+
     document.getElementById('gameRooms').innerHTML = "<tr><td>Games</td><td># playing</td></tr>";
     var rowString = "";
     for( game in caller.control.roomList ) {
@@ -179,6 +205,7 @@ UserView.prototype.updateTable = ( caller  ) => {
         row.innerHTML = rowString;
         document.getElementById('gameRooms').appendChild(row);
     }
+ 
 }
 
 
@@ -208,6 +235,12 @@ function UserControl(   ) {
             document.getElementById('whichRoom').value = "Must select room name.";
         }
         
+    }
+    var new_button   = document.getElementById('newGame');
+    new_button.onclick = function(evt) {
+        var payload = {};
+        payload.roomName = rescope_this.view.getRoomName();
+        rescope_this.packageAndShip('new_game', payload, rescope_this);
     }
     var leave_button = document.getElementById('roomLeave');
     leave_button.onclick = function(evt) {
@@ -320,7 +353,9 @@ UserControl.prototype.setupSocketHandlers = (  caller ) => {
         });
 
         caller.io.on('_NEWGAME', function(data) {
+            console.log(data);
             caller.model.updateModel(data, caller.model);
+            caller.model.startGame(caller.model);
             caller.renderView(undefined, caller);
         });
 }
@@ -361,7 +396,7 @@ UserModel.prototype.getcaptures = ( ) => {
     return this.captures;
 }
 UserModel.prototype.updateModel = ( modelIn, caller ) => {
-
+    console.log( 'updateModel called');
     caller.roomName  = modelIn.roomName;
     caller.playerOne = modelIn.playerOne;
     caller.playerTwo = modelIn.playerTwo;
@@ -384,6 +419,9 @@ UserModel.prototype.getInProgress = ( caller ) => {
 }
 UserModel.prototype.endGame = ( caller ) => {
     caller.gameOver = true;
+}
+UserModel.prototype.startGame = ( caller ) => {
+    caller.gameOver = false;
 }
 UserModel.prototype.getRoomName = (caller) => {
     return caller.roomName;

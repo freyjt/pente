@@ -25,7 +25,10 @@ function penteServer( ) {
         console.log("js served");
     });
 
-
+    app.get('/pente.css', function(req, res) {
+        res.sendFile(__dirname + '/pente.css');
+        console.log("css served");
+    });
 
     io.on('connection', function(socket) {
 
@@ -58,8 +61,11 @@ function penteServer( ) {
             }
         });
         socket.on('new_game', function(payload) {
-            openGames[payload.roomName].resetGame( openGames[payload.roomName]);
-            socket.to(payload.roomName).emit('_NEWGAME', openGames[payload.roomName]);
+            console.log('new_game called');
+            console.log(openGames[payload.roomName]);
+            openGames[payload.roomName].resetGame( openGames[payload.roomName] );
+            console.log(openGames[payload.roomName]);
+            io.to(payload.roomName).emit('_NEWGAME', openGames[payload.roomName] );
         });
         socket.on('join_room', function(payload) {
 

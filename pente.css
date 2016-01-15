@@ -1,0 +1,14 @@
+td#PlayerOne {
+    background: #ff00ff;
+}
+td#PlayerTwo {
+    background: #00ff00;
+}
+td.playerTurn {
+    background: red;
+}
+td {
+    margin:0;
+    padding:0;
+    border:0;
+}
