@@ -201,7 +201,7 @@ GameState.prototype.checkVictory  = ( payload, caller) => {
     var didWin = false;
     var pX = payload.x;
     var pY = payload.y;
-    var player = ( caller.whosTurn ) ? 1 : 2;
+    var player = ( caller.whosTurn === true ) ? 1 : 2;
     var otherP = ( player === 1  ) ? 2 : 1;
     //check if 5 in a row
     var downDiag = 1;
@@ -299,11 +299,11 @@ GameState.prototype.checkVictory  = ( payload, caller) => {
         caller.plays[token1[0]][token1[1]] = 0;
         caller.plays[token2[0]][token2[1]] = 0;
     }
-    function registerCapture( playerNumber ) {
-        if(     playerNumber == 1 ) { 
+    function registerCapture( player ) {
+        if(     player == 1 ) { 
             return ++caller.captures.playerOne; 
         }
-        else if(playerNumber == 2 ) { 
+        else if(player == 2 ) { 
             return ++caller.captures.playerTwo; 
         }
     }
