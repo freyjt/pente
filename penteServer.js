@@ -38,9 +38,14 @@ function penteServer( ) {
         // @todo find a more robust solution
         socket.on('list_rooms', function( data ) {
             console.log(data);
-            var roomList = generateRoomList(openGames);
-            io.emit("_ROOMLIST", roomList);
-        })
+            sendRoomList(io, openGames);
+        });
+        socket.on('leave_room', function( data ) {
+            console.log("Room Left: " + data.roomName);
+            openGames[data.roomName].playerLeave(data.myTurn, openGames[data.roomName]);
+            this.leave(data.roomName);
+            sendRoomList(io, openGames);
+        });        
         socket.on('play_made', function(payload) {
             console.log( payload );
             var gameObject = openGames[payload.roomName];
@@ -120,7 +125,10 @@ function penteServer( ) {
 
 } penteServer( );
 
-
+function sendRoomList( ioObject, gamesObject ) {
+    var roomList = generateRoomList(gamesObject);
+    ioObject.emit("_ROOMLIST", roomList);
+}
 function generateRoomList( openGames ) {
 
     var roomList      = [];
@@ -160,7 +168,7 @@ function GameState( roomName, player1) {
         playerTwo: 0
     }
 }
-GameState.prototype.initiatePlays = (caller ) => {
+GameState.prototype.initiatePlays = ( caller ) => {
     caller.plays = [];
     for(var i = 0; i < caller.gridSize; i += 1) {
         caller.plays.push([]);
@@ -325,11 +333,11 @@ GameState.prototype.getNumberPlaying = ( caller ) => {
     if(caller.playerTwo.length > 0 ) number += 1;
     return number;
 }
-GameState.prototype.playerLeave = ( objectWithMyTurnBool ) => {
-    if(objectWithMyTurnBool.myTurn === true) {
-        this.playerOne = '';
+GameState.prototype.playerLeave = ( myTurnBool, caller ) => {
+    if(myTurnBool === true) {
+        caller.playerOne = '';
     } else {
-        this.playerTwo = '';
+        caller.playerTwo = '';
     }
-    this.initiatePlays( );
+    caller.initiatePlays(caller);
 }

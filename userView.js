@@ -248,7 +248,7 @@ function UserControl(   ) {
         payload.roomName = rescope_this.view.getRoomName( );
         payload.myTurn   = rescope_this.model.getMyTurn( rescope_this.model );
         rescope_this.packageAndShip('leave_room', payload, rescope_this);
-        rescope_this.model == null;
+        rescope_this.model = null;
         rescope_this.renderView(undefined, rescope_this);
     }
     this.renderView(undefined, this);
@@ -287,7 +287,6 @@ UserControl.prototype.makeMove = (movePlacement, caller) => {
         var gameInProgress = caller.model.getInProgress( caller.model );
         if( gameInProgress ) {
             //check if it's your turn
-            console.log( "inprog:: " + caller.model);
             var yourTurn = caller.model.getYourTurn( caller.model );
             if( yourTurn ) {
                 var collision = caller.model.checkCollisions( movePlacement, caller.model );
