@@ -77,22 +77,51 @@ ViewObject.prototype.genSTATUSCluster  = function( state ) {
 ViewObject.prototype.genCHATCluster    = function( chatLog ) {
 
 }
-ViewObject.prototype.genCOLORPicker    = function( side ) {
+
+//side is a view state...can probably just set it like so
+ViewObject.prototype.genCHATColor      = function( side ) {
+    var cluster = document.getElementsByClassName('chatCluster')[0];
+        cluster.innerHTML = "";
+
     var colorList = ["DarkOrchid", "GreenYellow", "DodgerBlue", "SeaGreen",
-                     "Crimson",    "DarkOrange",  "Fuchsia",    "Gold" ];
+                     "Crimson",    "DarkOrange",  "Fuchsia",    "Gold",
+                     "DarkGrey" ];
     var i = 0, j = 0;
     if(this.playerColors.length == 0) {
         var firstColor = colorList[Math.ceil( ( Math.random() * colorList.length) - 1 )]
         this.playerColors[0] = colorList[ firstColor    ];
         this.playerColors[1] = colorList[ firstColor + 1];
     }
+
     for(i = 0; i < 3; i++ ) {
-        for(j = 0; j)
+        for(j = 0; j < 3; j++) {
+            if(side === 'playerOne' && i === 0 && j === 0) {
+                attachDiv(6 + (98 * i), 6 + (98 * j), this.playerColors[0]);
+                attachImg(this.playerColors[0]);
+            } else if( side === 'playerTwo' && i === 2 && j === 0) {
+                attachDiv(6 + (98 * i), 6 + (98 * j), this.playerColors[1]);
+                attachImg( this.playerColors[1] );
+            } else {
+                if(colorList[0] === this.playerColors[0] 
+                    || colorList[0] === this.playerColors[1])
+                    colorList.shift();
+                attachDiv(6 + (98 * i), 6 + (98 * j), colorList.shift() );
+            }
+        }
     }
     function attachDiv(posX, posY, color) {
-
+        var appender = document.createElement('div');
+        appender.style.position   = 'absolute';
+        appender.style.left       = posX + 'px';
+        appender.style.top        = posY + 'px';
+        appender.style.background = color;
+        cluster.appendChild(appender);
     }
-    if(side === 'PlayerOne') {
+    function attachImg( idIn ) {
+        document.getElementById( idIn ).innerHTML =
+            "<img src=\"/images/arrow.png\" height\"92px\" width=\"92px\"/>";
+    }
+    if(side === 'playerOne') {
 
     }
 
