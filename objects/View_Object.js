@@ -64,7 +64,7 @@ ViewObject.prototype.genJOINJoinRoom  = function( state ) {
 
 
 }
-ViewObject.prototype.genBOARDTextPanel = function( text, state ) {
+ViewObject.prototype.genBOARDTextPanel = function( text, moves, state ) {
 
 
 }
@@ -115,14 +115,17 @@ ViewObject.prototype.genCHATColor      = function( side ) {
         appender.style.left       = posX + 'px';
         appender.style.top        = posY + 'px';
         appender.style.background = color;
-        cluster.appendChild(appender);
+        appender.onclick = function(evt) {
+            if( side === playerOne ) {
+                this.playerColors[0] = color;
+            } else {
+                this.playerColors[1] = color;
+            }
+        }.bind(this);
+        cluster.appendChild(appender); //promoted scope. not in love @todo
     }
     function attachImg( idIn ) {
         document.getElementById( idIn ).innerHTML =
             "<img src=\"/images/arrow.png\" height\"92px\" width=\"92px\"/>";
     }
-    if(side === 'playerOne') {
-
-    }
-
 }
