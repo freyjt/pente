@@ -42,44 +42,57 @@ function PenteViewObject(control, parId ) {
 
     this.playerColor = [];
 
+    this._STATEcolorsWho = false; //let be the 
+
 }
-ViewObject.prototype.renderView = function( cause ) {
+PenteViewObject.prototype.renderView = function( cause ) {
     //gather state
     var state = this.control.getGameState( );
+
+    //build chat cluster
+    if(this._STATEcolorsWho !== false) {
+        this.chatCluster.genCHATcolor( this._STATEcolorsWho )
+            .bind(this);
+    } else if(state.inRoom !== true) {
+        this.chatCluster.genCHATroomList( state.roomList )
+            .bind(this);
+    } else {
+        var chatLog = this.control.getChatLog( );
+        this.chatCluster.genCHATchat( chatLog )
+            .bind(this);
+    }
+    //build join cluster
     if(state.gameOn === true) {
         this.joinCluster.innerHTML = this.genLeaveRoom( state );
-
-
     } else if(state.inRoom === true) {
         this.joinCluster.innerHTML = this.genLeaveRoom( state );
     } else {
         this.joinCluster.innerHTML = this.genJoinRoom( state );
     }
 }
-ViewObject.prototype.genJOINLeaveRoom = function( state ) {
+PenteViewObject.prototype.genJOINLeaveRoom = function( state ) {
 
 
 }
-ViewObject.prototype.genJOINJoinRoom  = function( state ) {
+PenteViewObject.prototype.genJOINJoinRoom  = function( state ) {
 
 
 }
-ViewObject.prototype.genBOARDTextPanel = function( text, moves, state ) {
-
-
-}
-ViewObject.prototype.genBOARDGamePanel = function( moves, newMove) {
+PenteViewObject.prototype.genBOARDTextPanel = function( text, moves, newMove, state ) {
 
 }
-ViewObject.prototype.genSTATUSCluster  = function( state ) {
+PenteViewObject.prototype.genBOARDGamePanel = function( moves, newMove) {
 
 }
-ViewObject.prototype.genCHATCluster    = function( chatLog ) {
+PenteViewObject.prototype.genSTATUSCluster  = function( state ) {
+
+}
+PenteViewObject.prototype.genCHATchat    = function( chatLog ) {
 
 }
 
 //side is a view state...can probably just set it like so
-ViewObject.prototype.genCHATColor      = function( side ) {
+PenteViewObject.prototype.genCHATColor      = function( side ) {
     var cluster = document.getElementsByClassName('chatCluster')[0];
         cluster.innerHTML = "";
 
@@ -128,4 +141,8 @@ ViewObject.prototype.genCHATColor      = function( side ) {
         document.getElementById( idIn ).innerHTML =
             "<img src=\"/images/arrow.png\" height\"92px\" width=\"92px\"/>";
     }
+}
+//let accept false to leave colorPicker state
+PenteViewObject.prototype.changePickerState = function( whichPlayer ) {
+    this._STATEcolorsWho = whichPlayer;
 }

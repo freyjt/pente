@@ -11,3 +11,8 @@ function PenteControlObject( parentId ) {
 PenteControlObject.prototype.getGameState = function( ) {
 
 }
+//returns a chat log that is impersistent throughout room
+// leaves (cached locally)
+PenteControlObject.prototype.getChatLog   = function( ) {
+
+}
