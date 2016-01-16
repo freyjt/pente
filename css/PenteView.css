@@ -1,0 +1,38 @@
+
+.gameContainer * {
+    border:   0px;
+    margin:   0px;
+    padding:  0px;
+    position: relative;
+    height:   700px;
+    width:    900px;
+}
+
+.boardCluster {
+    position: absolute;
+    left:     0px;
+    top:      100px;
+    height:   600px;
+    width:    600px;
+}
+.joinCluster {
+    position: absolute;
+    left:     600px;
+    bottom:   200px;
+    height:   200px;
+    width:    300px;
+}
+.chatCluster {
+    position: absolute;
+    left:     600px;
+    top:      200px;
+    height:   300px;
+    width:    300px;
+}
+.statusCluster {
+    position: absolute;
+    left:     600px;
+    top:      100px;
+    height:   100px;
+    width:    300px;
+}
