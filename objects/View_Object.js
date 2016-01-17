@@ -258,6 +258,10 @@ function BoardDisplay( posX, posY, sizeX, sizeY, lineCount) { //inherits from di
     this.lineColor    = 'Indigo';
     this.myColor      = '#0f0f0f';
     this.theirColor   = '#ff00ff';
+
+    this.lineWidth    = 2;
+    this.outLineWidth = 3;
+
 }
 BoardDisplay.prototype = Object.create(DisplayObject.prototype, {
                                         constructor: {
@@ -315,6 +319,16 @@ BoardDisplay.prototype.renderBackground = function(  ) {
 }
 BoardDisplay.prototype.renderTokens    = function(  ) {
 
+}
+BoardDisplay.prototype.renderToken     = function(pxX, pxY, rad, color) {
+    this.context.fillStyle   = color;
+    this.context.lineWidth   = this.outLineWidth; 
+
+    this.context.beginPath();
+    this.context.arc(pxX, pxY, rad, 0, 2*Math.PI);
+    
+    this.context.fill();
+    this.context.stroke();
 }
 BoardDisplay.prototype.mouseMove = function( evt ) {
     var xy       = this.getMousePosition( evt );
