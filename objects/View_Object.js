@@ -17,17 +17,20 @@ function PenteViewObject(control, parId ) {
         view.className = "gameContainer";
     this.conName = view.className;
     
-    
     //create containers for clusters
     this.joinCluster   = document.createElement('div');
     this.joinCluster.className = "joinCluster";
 
     this.boardCluster  = document.createElement('canvas');
     this.boardCluster.className = 'boardCluster';
-    this.boardCluster.width  = "600px";
-    this.boardCluster.height = "600px";
-
-
+    this.boardCluster.width     = "600px";
+    this.boardCluster.height    = "600px";
+    this.boardContext = this.boardCluster.getContext('2d');
+    //set internal size of board;
+    this.boardSize     = boardSize().bind(this);
+    this.boardXYStart  = this.getBOARDXYStart().bind(this);
+    this.boardLineCount= 19;
+    this.pixelsPerLine = pixelsPerLine().bind(this);
     this.statusCluster = document.createElement('div');
     this.statusCluster.className = 'statusCluster';
 
@@ -42,8 +45,19 @@ function PenteViewObject(control, parId ) {
 
     this.playerColor = [];
 
-    this._STATEcolorsWho = false; //let be the 
+    this._STATEcolorsWho = false; //let be the player who we are
+                                    //pick color will determine color
+                                    //picker is active
+    function boardSize( ) {
+        var maxWid = parseInt(this.boardCluster.width);
+        var maxHei = parseInt(this.boardCluster.height);
+        var minDim = (maxWid < maxHei) ? maxWid : maxHei;
 
+        return minDim - 50;
+    }
+    function pixelsPerLine( ) {
+        return this.boardSize / (this.boardLineCount - 1);
+    }
 }
 PenteViewObject.prototype.renderView = function( cause ) {
     //gather state
@@ -146,3 +160,54 @@ PenteViewObject.prototype.genCHATColor      = function( side ) {
 PenteViewObject.prototype.changePickerState = function( whichPlayer ) {
     this._STATEcolorsWho = whichPlayer;
 }
+//mouse events belong to view. Get them and defer immediately to
+// control
+PenteViewObject.prototype.setUpCanvasObjectEvents = function(  ) {
+
+
+    this.boardCluster.onMouseMove = function( evt ) {
+        var xy = this.getMousePosition(evt);
+            xy = {x: xy.x - 25, y: xy.y - 25};
+
+        this.control.handleMouseMoveOnBoard(xy);
+    }.bind(this);
+    this.boardCluster.onMouseDown = function( evt ) {
+        var xy = this.getMousePosition(evt);
+        this.control.handleMouseDownOnBoard(xy);
+    }.bind(this);
+
+    function mapXYtoGameboard( xyIn ) {
+        return {
+            x: (xyIn.x - this.boardXYStart.x) / this.pixelsPerLine,
+            y: (xyIn.y - this.boardXYStart.y) / this.pixelsPerLine
+        };
+    }
+}
+//Moderately expensive for every render. Consider caching
+PenteViewObject.prototype.getBOARDXYStart = function( ) {
+    return {
+        x: (parseInt(this.boardCluster.width)  - this.boardSize) / 2,
+        y: (parseInt(this.boardCluster.height) - this.boardSize) / 2
+    };
+}
+////////////////////
+//http://www.kirupa.com/html5/getting_mouse_click_position.htm
+PenteViewObject.prototype.getMousePosition = function(e) {
+
+    var parentPosition = getPosition(e.currentTarget);
+    var xPosition = e.clientX - parentPosition.x;
+    var yPosition = e.clientY - parentPosition.y;
+    return { x: xPosition, y: yPosition };
+
+    function getPosition(element) {
+        var xPosition = 0;
+        var yPosition = 0;
+          
+        while (element) {
+            xPosition += (element.offsetLeft - element.scrollLeft + element.clientLeft);
+            yPosition += (element.offsetTop - element.scrollTop + element.clientTop);
+            element = element.offsetParent;
+        }
+        return { x: xPosition, y: yPosition };
+    }
+} //END http://www.kirupa.com/html5/getting_mouse_click_position.htm
