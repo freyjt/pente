@@ -256,6 +256,8 @@ function BoardDisplay( posX, posY, sizeX, sizeY, lineCount) { //inherits from di
 
     this.bgColor      = 'Beige';
     this.lineColor    = 'Indigo';
+    this.myColor      = '#0f0f0f';
+    this.theirColor   = '#ff00ff';
 }
 BoardDisplay.prototype = Object.create(DisplayObject.prototype, {
                                         constructor: {
@@ -265,6 +267,22 @@ BoardDisplay.prototype = Object.create(DisplayObject.prototype, {
                                             writeable:    true
                                             };
                                         });
+BoardDisplay.prototype.setBGColor = function( colorIn ) {
+    this.bgColor = colorIn;
+}
+BoardDisplay.prototype.setLineColor = function( colorIn ) {
+    this.lineColor = colorIn;
+}
+BoardDisplay.prototype.setMyColor = function(myColorIn) {
+    this.myColor = myColorIn;
+}
+BoardDisplay.prototype.setTheirColor = fucntion(theirColorIn) {
+    this.theirColor = theirColorIn;
+}
+BoardDisplay.prototype.setPlayerColors = function(myColorIn, theirColorIn) {
+    this.myColor    = myColorIn;
+    this.theirColor = theirColorIn;
+}
 BoardDisplay.prototype.render = function( sizeX, sizeY, posX, posY, plays, newPlay) {
     this.container.width  = sizeX;
     this.container.height = sizeY;
@@ -279,6 +297,7 @@ BoardDisplay.prototype.render = function( sizeX, sizeY, posX, posY, plays, newPl
 
 
     this.renderBackground( ).bind(this);
+    this.renderTokens(plays, newPlay).bind(this);
 }
 BoardDisplay.prototype.renderBackground = function(  ) {
     this.context.fillStyle = this.bgColor;
@@ -293,6 +312,9 @@ BoardDisplay.prototype.renderBackground = function(  ) {
         this.lineTo(this.container.width - this.startX, this.startY + i * this.lineGap);
     }
     this.context.stroke();
+}
+BoardDisplay.prototype.renderTokens    = function(  ) {
+
 }
 BoardDisplay.prototype.mouseMove = function( evt ) {
     var xy       = this.getMousePosition( evt );
