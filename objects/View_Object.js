@@ -219,6 +219,8 @@ function DisplayObject( posX, posY, sizeX, sizeY, container ) {
     this.height = sizeY;
     this.width  = sizeX;
     this.container = document.createElement.(container);
+
+    this.bgColor      = 'Beige';
 }
 DisplayObject.prototype.getMousePosition = function( event ) {
     var parentPosition = getPosition(e.currentTarget);
@@ -238,6 +240,11 @@ DisplayObject.prototype.getMousePosition = function( event ) {
         return { x: xPosition, y: yPosition };
     }
 }
+DisplayObject.prototype.setBGColor    = function( colorIn ) {
+    this.bgColor = colorIn;
+}
+
+
 
 function BoardDisplay( posX, posY, sizeX, sizeY, lineCount) { //inherits from display object
     //constructor steals this...left, top, height, width
@@ -252,13 +259,14 @@ function BoardDisplay( posX, posY, sizeX, sizeY, lineCount) { //inherits from di
     this.boardY       = 0;
     this.lineCount    = lineCount;
     this.betweenLines = 0; //calculate on render
+    this.tokenRad     = 0; //calculate on render
 
 
-    this.bgColor      = 'Beige';
     this.lineColor    = 'Indigo';
-    this.myColor      = '#0f0f0f';
-    this.theirColor   = '#ff00ff';
-
+    this.oneColor     = '#0f0f0f';
+    this.twoColor     = '#ff00ff';
+    this.playColor    = '#aabbcc';
+    
     this.lineWidth    = 2;
     this.outLineWidth = 3;
 
@@ -271,23 +279,24 @@ BoardDisplay.prototype = Object.create(DisplayObject.prototype, {
                                             writeable:    true
                                             };
                                         });
-BoardDisplay.prototype.setBGColor = function( colorIn ) {
-    this.bgColor = colorIn;
-}
-BoardDisplay.prototype.setLineColor = function( colorIn ) {
+
+BoardDisplay.prototype.setLineColor  = function( colorIn ) {
     this.lineColor = colorIn;
 }
-BoardDisplay.prototype.setMyColor = function(myColorIn) {
-    this.myColor = myColorIn;
+BoardDisplay.prototype.setOneColor    = function(oneColorIn) {
+    this.oneColor = oneColorIn;
 }
-BoardDisplay.prototype.setTheirColor = fucntion(theirColorIn) {
-    this.theirColor = theirColorIn;
+BoardDisplay.prototype.setTwoColor    = function(twoColorIn) {
+    this.twoColor = twoColorIn;
 }
-BoardDisplay.prototype.setPlayerColors = function(myColorIn, theirColorIn) {
-    this.myColor    = myColorIn;
-    this.theirColor = theirColorIn;
+BoardDisplay.prototype.setPlayerColors = function(oneColorIn, twoColorIn) {
+    this.oneColor = oneColorIn;
+    this.twoColor = twoColorIn;
 }
-BoardDisplay.prototype.render = function( sizeX, sizeY, posX, posY, plays, newPlay) {
+BoardDisplay.prototype.render = function( sizeX, sizeY, posX, posY, 
+                                            plays, newPlay, 
+                                            overString, overCode) {
+    //setup all the vars for rendering
     this.container.width  = sizeX;
     this.container.height = sizeY;
     this.container.left   = posX;
@@ -297,11 +306,13 @@ BoardDisplay.prototype.render = function( sizeX, sizeY, posX, posY, plays, newPl
     this.boardWidth   = .85 * minSize;
     this.startLeft    = (sizeX - boardWidth) / 2;
     this.startTop     = (sizeY - boardWidth) / 2;
-    this.lineGap = this.boardWidth / (this.lineCount - 1);
+    this.lineGap  = this.boardWidth / (this.lineCount - 1);
+    this.tokenRad = (this.lineGap - (.1 * this.lineGap)) / 2;
 
-
+    //do the rendering based on state
     this.renderBackground( ).bind(this);
     this.renderTokens(plays, newPlay).bind(this);
+
 }
 BoardDisplay.prototype.renderBackground = function(  ) {
     this.context.fillStyle = this.bgColor;
@@ -317,8 +328,31 @@ BoardDisplay.prototype.renderBackground = function(  ) {
     }
     this.context.stroke();
 }
-BoardDisplay.prototype.renderTokens    = function(  ) {
+BoardDisplay.prototype.renderTokens    = function(plays, localToken) {
+    //dots is an object of lists of xy objects
+    var posPx = {};
+    if(typeof(plays) !== 'undefined') {
+        for(var i = 0; i < plays.length; i++ ) {
+            for(var j = 0; j < plays[i].length; j++) {
+                if( plays[i][j] === 1 ) {
+                    posPx = convertPos(i, j); 
+                    this.renderToken(posPx.x, posPx.y, this.tokenRad, this.oneColor);
+                } else if( plays[i][j] === 2 ) {
+                    posPx = convertPos(i, j);
+                    this.renderToken(posPx.x, posPx.y, this.tokenRad, this.twoColor);
+                }
+            }
+        }
+    }
+    if( typeof(localToken) !== 'undefined' ) {
+        posPx = convertPos(localToken.x, localToken.y);
+        caller.drawToken( posPx, posPy, this.tokenRad, this.playColor);
+    }
 
+    function convertPos(x, y) {
+        return {x: this.startX + i * this.lineGap, 
+                y: this.startY + j * this.lineGap };
+    }
 }
 BoardDisplay.prototype.renderToken     = function(pxX, pxY, rad, color) {
     this.context.fillStyle   = color;
@@ -326,7 +360,7 @@ BoardDisplay.prototype.renderToken     = function(pxX, pxY, rad, color) {
 
     this.context.beginPath();
     this.context.arc(pxX, pxY, rad, 0, 2*Math.PI);
-    
+
     this.context.fill();
     this.context.stroke();
 }
