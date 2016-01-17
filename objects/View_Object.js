@@ -213,11 +213,12 @@ PenteViewObject.prototype.getMousePosition = function(e) {
 } //END http://www.kirupa.com/html5/getting_mouse_click_position.htm
 
 
-function DisplayObject( posX, posY, sizeX, sizeY ) {
+function DisplayObject( posX, posY, sizeX, sizeY, container ) {
     this.left   = posX;
     this.top    = posY;
     this.height = sizeY;
     this.width  = sizeX;
+    this.container = document.createElement.(container);
 }
 DisplayObject.prototype.getMousePosition = function( event ) {
     var parentPosition = getPosition(e.currentTarget);
@@ -238,13 +239,23 @@ DisplayObject.prototype.getMousePosition = function( event ) {
     }
 }
 
-function BoardDisplay( posX, posY, sizeX, sizeY) { //inherits from display object
+function BoardDisplay( posX, posY, sizeX, sizeY, lineCount) { //inherits from display object
     //constructor steals this...left, top, height, width
-    DisplayObject.call(this, posX, posY, sizeX, sizeY);
+    DisplayObject.call(this, posX, posY, sizeX, sizeY, 'canvas');
+    //using canvas. Need a context
+    this.ctx          = this.container.getContext('2d');
     //store the current location of the pointing
-    // device on the object. Trigger events only on change.
-    this.boardX = 0;
-    this.boardY = 0;
+    // device on the object. Trigger token move events only on change.
+    this.startLeft    = 0; //calculate on render
+    this.startTop     = 0; //calculate on render
+    this.boardX       = 0;
+    this.boardY       = 0;
+    this.lineCount    = lineCount;
+    this.betweenLines = 0; //calculate on render
+
+
+    this.bgColor      = 'Beige';
+    this.lineColor    = 'Indigo';
 }
 BoardDisplay.prototype = Object.create(DisplayObject.prototype, {
                                         constructor: {
@@ -254,3 +265,37 @@ BoardDisplay.prototype = Object.create(DisplayObject.prototype, {
                                             writeable:    true
                                             };
                                         });
+BoardDisplay.prototype.render = function( sizeX, sizeY, posX, posY, plays, newPlay) {
+    this.container.width  = sizeX;
+    this.container.height = sizeY;
+    this.container.left   = posX;
+    this.container.top    = posY;
+
+    var minSize    = ( sizeX < sizeY ) ? sizeX ; sizeY;
+    this.boardWidth   = .85 * minSize;
+    this.startLeft    = (sizeX - boardWidth) / 2;
+    this.startTop     = (sizeY - boardWidth) / 2;
+    this.lineGap = this.boardWidth / (this.lineCount - 1);
+
+
+    this.renderBackground( ).bind(this);
+}
+BoardDisplay.prototype.renderBackground = function(  ) {
+    this.context.fillStyle = this.bgColor;
+    this.context.fillRect(0, 0, this.container.width, this.container.height);
+
+    this.context.strokeStyle = this.lineColor;
+    this.context.beginPath();
+    for(var i = 0; i < this.lineCount; i++) {
+        this.context.moveTo(this.startX + i * this.lineGap, this.startY  );
+        this.lineTo(this.startX + i * this.lineGap, this.container.height - this.startY);
+        this.context.moveTo(this.startX, this.startY + i * this.lineGap);
+        this.lineTo(this.container.width - this.startX, this.startY + i * this.lineGap);
+    }
+    this.context.stroke();
+}
+BoardDisplay.prototype.mouseMove = function( evt ) {
+    var xy       = this.getMousePosition( evt );
+    var pointerX = (xy.x - this.startLeft) / this.betweenLines;
+    var pointerY = (xy.y - this.startTop ) / this.betweenLines;
+}
