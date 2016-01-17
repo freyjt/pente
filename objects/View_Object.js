@@ -211,3 +211,46 @@ PenteViewObject.prototype.getMousePosition = function(e) {
         return { x: xPosition, y: yPosition };
     }
 } //END http://www.kirupa.com/html5/getting_mouse_click_position.htm
+
+
+function DisplayObject( posX, posY, sizeX, sizeY ) {
+    this.left   = posX;
+    this.top    = posY;
+    this.height = sizeY;
+    this.width  = sizeX;
+}
+DisplayObject.prototype.getMousePosition = function( event ) {
+    var parentPosition = getPosition(e.currentTarget);
+    var xPosition = e.clientX - parentPosition.x;
+    var yPosition = e.clientY - parentPosition.y;
+    return { x: xPosition, y: yPosition };
+
+    function getPosition(element) {
+        var xPosition = 0;
+        var yPosition = 0;
+          
+        while (element) {
+            xPosition += (element.offsetLeft - element.scrollLeft + element.clientLeft);
+            yPosition += (element.offsetTop - element.scrollTop + element.clientTop);
+            element = element.offsetParent;
+        }
+        return { x: xPosition, y: yPosition };
+    }
+}
+
+function BoardDisplay( posX, posY, sizeX, sizeY) { //inherits from display object
+    //constructor steals this...left, top, height, width
+    DisplayObject.call(this, posX, posY, sizeX, sizeY);
+    //store the current location of the pointing
+    // device on the object. Trigger events only on change.
+    this.boardX = 0;
+    this.boardY = 0;
+}
+BoardDisplay.prototype = Object.create(DisplayObject.prototype, {
+                                        constructor: {
+                                            configurable: true,
+                                            enumerable:   true,
+                                            value:        BoardDisplay,
+                                            writeable:    true
+                                            };
+                                        });
