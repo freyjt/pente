@@ -243,7 +243,30 @@ DisplayObject.prototype.getMousePosition = function( event ) {
 DisplayObject.prototype.setBGColor    = function( colorIn ) {
     this.bgColor = colorIn;
 }
+// register all css with .div-button
+DisplayObject.prototype.divAsButton = function(ele, id, sizePCTX, sizePCTY
+                                        posPCTX, posPCTY, callBackClick, callBackMove) {
+    var buttonWidth    = sizePCTX * parX,
+        buttonHeight   = sizePCTY * parY;
+    ele.id             = id;
+    ele.className     += 'div-button';
+    ele.style.position = 'absolute';
+    ele.style.top      = posPCTY  * parY;
+    ele.style.left     = posP
+    ele.width          = buttonWidth;
+    ele.height         = 
+    if(typeof(callBackClick) !== 'undefined') {
+        ele.addEventListener('click', function(evt) {
+            callBackClick(evt);
+        })
+    }
+    if(typeof(callBackMove) !== 'undefined') {
+        ele.addEventListener('mouseMove', function(evt) {
+            callBackMove(evt);
+        })
+    }
 
+}
 
 
 function BoardDisplay( posX, posY, sizeX, sizeY, lineCount) { //inherits from display object
@@ -297,10 +320,10 @@ BoardDisplay.prototype.render = function( sizeX, sizeY, posX, posY,
                                             plays, newPlay, 
                                             overString, overCode) {
     //setup all the vars for rendering
-    this.container.width  = sizeX;
-    this.container.height = sizeY;
-    this.container.left   = posX;
-    this.container.top    = posY;
+    this.container.width        = sizeX;
+    this.container.height       = sizeY;
+    this.container.style.left   = posX;
+    this.container.style.top    = posY;
 
     var minSize    = ( sizeX < sizeY ) ? sizeX ; sizeY;
     this.boardWidth   = .85 * minSize;
@@ -394,6 +417,7 @@ BoardDisplay.prototype.mouseMove = function( evt ) {
 
 function JoinDisplay(posX, posY, sizeX, sizeY ) {
     DisplayObject.call(this, posX, posY, sizeX, sizeY, 'div');
+    this.container.height = sizeX
 }
 JoinDisplay.prototype = Object.create(DisplayObject.prototype, {
                                         constructor: {
@@ -403,7 +427,16 @@ JoinDisplay.prototype = Object.create(DisplayObject.prototype, {
                                             writeable:    true
                                             };
                                         });
-JoinDisplay.prototype.render = function(joinState) {
+JoinDisplay.prototype.render = function(posX, posY, sizeX, sizeY, joinState) {
+    var innerString = "";
+    if(joinState.inRoom = true) {
+        innerString = this.renderInRoom(sizeX, sizeY);
+    }
+    this.container.innerHTML = innerString;
+}
+JoinDisplay.prototype.renderInRoom = function(sizeX, sizeY) {
+    var leaveButton = document.createElement()
+        leaveButton = setupButton(leaveButton, 'leaveRoom', sizeX, sizeY);
 
 
 }
