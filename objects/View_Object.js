@@ -213,6 +213,29 @@ PenteViewObject.prototype.getMousePosition = function(e) {
 } //END http://www.kirupa.com/html5/getting_mouse_click_position.htm
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function DisplayObject( posX, posY, sizeX, sizeY, container ) {
     this.left   = posX;
     this.top    = posY;
@@ -244,29 +267,43 @@ DisplayObject.prototype.setBGColor    = function( colorIn ) {
     this.bgColor = colorIn;
 }
 // register all css with .div-button
-DisplayObject.prototype.divAsButton = function(ele, id, sizePCTX, sizePCTY
-                                        posPCTX, posPCTY, callBackClick, callBackMove) {
-    var buttonWidth    = sizePCTX * parX,
-        buttonHeight   = sizePCTY * parY;
+DisplayObject.prototype.getDivAsButton = function( id, text, background sizeX, sizeY
+                                        posX, posY, callBackClick, callBackMove
+                                        callBackLeave) {
+
+    var ele = document.createElement('div');
     ele.id             = id;
     ele.className     += 'div-button';
     ele.style.position = 'absolute';
-    ele.style.top      = posPCTY  * parY;
-    ele.style.left     = posP
-    ele.width          = buttonWidth;
-    ele.height         = 
+    ele.style.top      = posY;
+    ele.style.left     = posP;
+    ele.style.background = background;
+    ele.width          = sizeX;
+    ele.height         = sizeY;
+    ele.innerHTML      = text;
+
     if(typeof(callBackClick) !== 'undefined') {
         ele.addEventListener('click', function(evt) {
             callBackClick(evt);
-        })
+        });
     }
     if(typeof(callBackMove) !== 'undefined') {
         ele.addEventListener('mouseMove', function(evt) {
             callBackMove(evt);
-        })
+        });
+    }
+    if(typeof(callBackLeave) !== 'undefiend') {
+        ele.addEventListener('mouseLeave', function(evt) {
+            callBackLeave(evt);
+        });
     }
 
+    return ele;
 }
+
+
+
+
 
 
 function BoardDisplay( posX, posY, sizeX, sizeY, lineCount) { //inherits from display object
@@ -415,9 +452,22 @@ BoardDisplay.prototype.mouseMove = function( evt ) {
     var pointerY = (xy.y - this.startTop ) / this.betweenLines;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
 function JoinDisplay(posX, posY, sizeX, sizeY ) {
     DisplayObject.call(this, posX, posY, sizeX, sizeY, 'div');
-    this.container.height = sizeX
+    this.container.height = sizeX;
+    this.container.width  = sizeY;
 }
 JoinDisplay.prototype = Object.create(DisplayObject.prototype, {
                                         constructor: {
@@ -435,8 +485,38 @@ JoinDisplay.prototype.render = function(posX, posY, sizeX, sizeY, joinState) {
     this.container.innerHTML = innerString;
 }
 JoinDisplay.prototype.renderInRoom = function(sizeX, sizeY) {
-    var leaveButton = document.createElement()
-        leaveButton = setupButton(leaveButton, 'leaveRoom', sizeX, sizeY);
 
+    var bgColor     = 'LightBlue';
+    var leaveButton = this.getDivAsButton( 'leaveRoom', 'Leave Room',
+            bgColor, .8 * sizeX, .2 * sizeY, .1 * sizeX, .2 * sizeY, 
+            this.leaveOnClick, this.leaveOnMove, this.leaveOnLeave);
+
+
+    var newGameButton = this.getDivAsButton( 'newGame', 'NewGame',
+            bgColor, .8 * sizeX, .2 * sizeY, .1 * sizeX, .6 * sizeY,
+            this.newGameOnClick, this.newGameOnMove, this.newGameOnLeave);
+
+    this.container.innerHTML = "";
+    this.container.appendChild( leaveButton   );
+    this.container.appendChild( newGameButton );
+}
+JoinDisplay.prototype.leaveOnClick = function( evt ) {
+
+    //emit for control
+}
+JoinDisplay.prototype.leaveOnMove  = function( evt ) {
+
+}
+JoinDisplay.prototype.leaveOnLeave = function( evt ) {
+
+
+}
+JoinDisplay.prototype.newGameOnClick = function( evt ) {
+
+}
+JoinDisplay.prototype.newGameOnMove  = function( evt ) {
+
+}
+JoinDisplay.prototype.newGameOnLeave = function( evt ) {
 
 }
