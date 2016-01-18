@@ -268,8 +268,8 @@ DisplayObject.prototype.setBGColor    = function( colorIn ) {
 }
 // register all css with .div-button
 DisplayObject.prototype.getDivAsButton = function( id, text, background sizeX, sizeY
-                                        posX, posY, callBackClick, callBackMove
-                                        callBackLeave) {
+                                        posX, posY, callBackClick, callBackMouseOver
+                                        callBackLeave, callBackOnMouseUp) {
 
     var ele = document.createElement('div');
     ele.id             = id;
@@ -284,20 +284,24 @@ DisplayObject.prototype.getDivAsButton = function( id, text, background sizeX, s
 
     if(typeof(callBackClick) !== 'undefined') {
         ele.addEventListener('click', function(evt) {
-            callBackClick(evt);
+            callBackClick(evt).bind(this);
         });
     }
     if(typeof(callBackMove) !== 'undefined') {
-        ele.addEventListener('mouseMove', function(evt) {
-            callBackMove(evt);
+        ele.addEventListener('mouseover', function(evt) {
+            callBackMouseOver(evt).bind(this);
         });
     }
     if(typeof(callBackLeave) !== 'undefiend') {
-        ele.addEventListener('mouseLeave', function(evt) {
-            callBackLeave(evt);
+        ele.addEventListener('mouseleave', function(evt) {
+            callBackLeave(evt).bind(this);
         });
     }
-
+    if(typeof(callBackOnMouseUp) !== 'undefined') {
+        ele.addEventListener('mouseup', function(evt) {
+            callBackLeave(evt).bind(this);
+        })
+    }
     return ele;
 }
 
@@ -468,6 +472,12 @@ function JoinDisplay(posX, posY, sizeX, sizeY ) {
     DisplayObject.call(this, posX, posY, sizeX, sizeY, 'div');
     this.container.height = sizeX;
     this.container.width  = sizeY;
+
+    this.backgroundColor  = 'Green';
+    this.buttonInactive   = 'Gainsboro';
+    this.buttonIdle       = 'LawnGreen';
+    this.buttonMouseOver  = 'MediumSpringGreen';
+    this.buttonClick      = 'LawnGreen';
 }
 JoinDisplay.prototype = Object.create(DisplayObject.prototype, {
                                         constructor: {
@@ -484,39 +494,42 @@ JoinDisplay.prototype.render = function(posX, posY, sizeX, sizeY, joinState) {
     }
     this.container.innerHTML = innerString;
 }
-JoinDisplay.prototype.renderInRoom = function(sizeX, sizeY) {
+JoinDisplay.prototype.renderInRoom = function(sizeX, sizeY, newGameActive) {
 
     var bgColor     = 'LightBlue';
     var leaveButton = this.getDivAsButton( 'leaveRoom', 'Leave Room',
             bgColor, .8 * sizeX, .2 * sizeY, .1 * sizeX, .2 * sizeY, 
-            this.leaveOnClick, this.leaveOnMove, this.leaveOnLeave);
+            this.leaveOnClick, this.buttonOnMouseOver, this.leaveOnLeave);
 
-
-    var newGameButton = this.getDivAsButton( 'newGame', 'NewGame',
-            bgColor, .8 * sizeX, .2 * sizeY, .1 * sizeX, .6 * sizeY,
-            this.newGameOnClick, this.newGameOnMove, this.newGameOnLeave);
+    if(newGameActive) {
+        var newGameButton = this.getDivAsButton( 'newGame', 'NewGame',
+                bgColor, .8 * sizeX, .2 * sizeY, .1 * sizeX, .6 * sizeY,
+                this.newGameOnClick, this.buttonOnMouseOver, this.newGameOnLeave
+                this.buttonOnMouseUp);
+    } else {
+        var newGameButton = this.getDivAsButton( 'newGame', 'NewGame',
+                bgColor, .8 * sizeX, .2 * sizeY, .1 * sizeX, .6 * sizeY);
+        newGameButton.style.background = this.buttonInactive;
+    }
 
     this.container.innerHTML = "";
     this.container.appendChild( leaveButton   );
     this.container.appendChild( newGameButton );
 }
 JoinDisplay.prototype.leaveOnClick = function( evt ) {
-
-    //emit for control
-}
-JoinDisplay.prototype.leaveOnMove  = function( evt ) {
-
-}
-JoinDisplay.prototype.leaveOnLeave = function( evt ) {
-
-
+    //emit for control or create visibility for control in state object.
+    // is bound to DisplayObject
 }
 JoinDisplay.prototype.newGameOnClick = function( evt ) {
-
+    //emit for control or create visibility for control in state object.
+    // is bound to DisplayObject
 }
-JoinDisplay.prototype.newGameOnMove  = function( evt ) {
-
+JoinDisplay.prototype.buttonOnLeave = function( evt ) {
+    evt.currentTarget.style.background = this.buttonIdle;
 }
-JoinDisplay.prototype.newGameOnLeave = function( evt ) {
-
+JoinDisplay.prototype.buttonOnMouseOver  = function( evt ) {
+    evt.currentTarget.style.background = this.buttonMouseOver;
+}
+JoinDisplay.prototype.buttonOnMouseUp = function(evt) {
+    evt.currentTarget.style.background = this.buttonIdle;
 }
