@@ -304,7 +304,23 @@ DisplayObject.prototype.getDivAsButton = function( id, text, background sizeX, s
     }
     return ele;
 }
-
+DisplayObject.prototype.setupButtonColors = function(setOfColorsIn) {
+    if(typeof(this.backgroundColor) !== 'undefined'){
+        this.backgroundColor  = 'Green';
+    }
+    if(typeof(this.buttonInactive)  !== 'undefined'){
+        this.buttonInactive   = 'Gainsboro';
+    }
+    if(typeof(this.buttonIdle)      !== 'undefined') {
+        this.buttonIdle       = 'LawnGreen';
+    }
+    if(typeof(this.buttonMouseOver) !== 'undefined') {
+        this.buttonMouseOver  = 'MediumSpringGreen';
+    }
+    if(typeof(this.buttonClick)     !== 'undefined') {
+        this.buttonClick      = 'LawnGreen';
+    }
+}
 
 
 
@@ -544,6 +560,8 @@ JoinDisplay.prototype.buttonOnMouseUp = function(evt) {
 
 function StatusDisplay(posX, posY, sizeX, sizeY) {
     DisplayObject.call(this, posX, posY, sizeX, sizeY, 'div');
+    this.oneColor = "#ffffff"; //set on change event. let viewcontrol handle it
+    this.twoColor = "#00ff00";
 }
 
 StatusDisplay.prototype = Object.create(DisplayObject.prototype, {
@@ -554,3 +572,19 @@ StatusDisplay.prototype = Object.create(DisplayObject.prototype, {
                                             writeable:    true
                                             };
                                         });
+StatusDisplay.prototype.render = function( statusState ) {
+    var playerOne = this.getDivAsButton()
+}
+StatusDisplay.prototype.setColors = function( playerOne, playerTwo) {
+    this.oneColor = playerOne;
+    this.twoColor = playerTwo;
+}
+StatusDisplay.prototype.onMouseOver = function( evt ) {
+
+
+    this.backgroundColor  = 'Green';
+    this.buttonInactive   = 'Gainsboro';
+    this.buttonIdle       = 'LawnGreen';
+    this.buttonMouseOver  = 'MediumSpringGreen';
+    this.buttonClick      = 'LawnGreen';
+}
