@@ -266,7 +266,7 @@ function BoardDisplay( posX, posY, sizeX, sizeY, lineCount) { //inherits from di
     this.oneColor     = '#0f0f0f';
     this.twoColor     = '#ff00ff';
     this.playColor    = '#aabbcc';
-    
+
     this.lineWidth    = 2;
     this.outLineWidth = 3;
 
@@ -311,7 +311,7 @@ BoardDisplay.prototype.render = function( sizeX, sizeY, posX, posY,
 
     //do the rendering based on state
     this.renderBackground( ).bind(this);
-    this.renderTokens(plays, newPlay).bind(this);
+    this.renderTokens(plays, {this.boardX, this.boardY}).bind(this);
 
 }
 BoardDisplay.prototype.renderBackground = function(  ) {
@@ -363,6 +363,28 @@ BoardDisplay.prototype.renderToken     = function(pxX, pxY, rad, color) {
 
     this.context.fill();
     this.context.stroke();
+}
+BoardDisplay.prototye.renderText  = function( textString, textCode) {
+    if(textCode === 'error') {
+        this.context.fillStyle = 'Red';
+    } else if( textCode === 'game_end') {
+        this.context.fillStyle = 'Grey';
+    } else {
+        this.context.fillStyle = 'YellowGreen';
+    }
+
+    this.context.globalAlpha = .3;
+    this.context.fillRect(0,0, this.container.width, this.container.height);
+    this.context.globalAlpha =  1;
+    var bannerHeight = .2 * this.container.height;
+    this.context.fillRect(0, (this.container.height - bannerHeight)/2, 
+        this.container.width, bannerHeight); 
+    var textHeight   = Math.floor(.15 * this.container.height);
+    var textBump     = (.2 - .15) / 2 * this.container.height;
+    this.context.fillStyle = this.lineColor;
+    this.context.font = textHeight + "pt Arial";
+    this.context.fillText(textString, textBump, 
+        ( (this.container.height - bannerHeight) / 2 ) + textBump);
 }
 BoardDisplay.prototype.mouseMove = function( evt ) {
     var xy       = this.getMousePosition( evt );
