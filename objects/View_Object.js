@@ -391,3 +391,19 @@ BoardDisplay.prototype.mouseMove = function( evt ) {
     var pointerX = (xy.x - this.startLeft) / this.betweenLines;
     var pointerY = (xy.y - this.startTop ) / this.betweenLines;
 }
+
+function JoinDisplay(posX, posY, sizeX, sizeY ) {
+    DisplayObject.call(this, posX, posY, sizeX, sizeY, 'div');
+}
+JoinDisplay.prototype = Object.create(DisplayObject.prototype, {
+                                        constructor: {
+                                            configurable: true,
+                                            enumerable:   true,
+                                            value:        JoinDisplay,
+                                            writeable:    true
+                                            };
+                                        });
+JoinDisplay.prototype.render = function(joinState) {
+
+
+}
