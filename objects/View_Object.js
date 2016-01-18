@@ -468,7 +468,7 @@ BoardDisplay.prototype.mouseMove = function( evt ) {
 
 
 
-function JoinDisplay(posX, posY, sizeX, sizeY ) {
+function JoinDisplay(posX, posY, sizeX, sizeY) {
     DisplayObject.call(this, posX, posY, sizeX, sizeY, 'div');
     this.container.height = sizeX;
     this.container.width  = sizeY;
@@ -533,3 +533,24 @@ JoinDisplay.prototype.buttonOnMouseOver  = function( evt ) {
 JoinDisplay.prototype.buttonOnMouseUp = function(evt) {
     evt.currentTarget.style.background = this.buttonIdle;
 }
+
+
+
+
+
+
+
+
+
+function StatusDisplay(posX, posY, sizeX, sizeY) {
+    DisplayObject.call(this, posX, posY, sizeX, sizeY, 'div');
+}
+
+StatusDisplay.prototype = Object.create(DisplayObject.prototype, {
+                                        constructor: {
+                                            configurable: true,
+                                            enumerable:   true,
+                                            value:        StatusDisplay,
+                                            writeable:    true
+                                            };
+                                        });
