@@ -84,26 +84,13 @@ PenteViewObject.prototype.renderView = function( cause ) {
         this.joinCluster.innerHTML = this.genJoinRoom( state );
     }
 }
-PenteViewObject.prototype.genJOINLeaveRoom = function( state ) {
 
 
-}
-PenteViewObject.prototype.genJOINJoinRoom  = function( state ) {
 
 
-}
-PenteViewObject.prototype.genBOARDTextPanel = function( text, moves, newMove, state ) {
 
-}
-PenteViewObject.prototype.genBOARDGamePanel = function( moves, newMove) {
 
-}
-PenteViewObject.prototype.genSTATUSCluster  = function( state ) {
 
-}
-PenteViewObject.prototype.genCHATchat    = function( chatLog ) {
-
-}
 
 //side is a view state...can probably just set it like so
 PenteViewObject.prototype.genCHATColor      = function( side ) {
@@ -267,7 +254,7 @@ DisplayObject.prototype.setBGColor    = function( colorIn ) {
     this.bgColor = colorIn;
 }
 // register all css with .div-button
-DisplayObject.prototype.getDivAsButton = function( id, text, background sizeX, sizeY
+DisplayObject.prototype.getDivAsButton = function( id, text, background, sizeX, sizeY
                                         posX, posY, callBackClick, callBackMouseOver
                                         callBackLeave, callBackOnMouseUp) {
 
@@ -304,23 +291,48 @@ DisplayObject.prototype.getDivAsButton = function( id, text, background sizeX, s
     }
     return ele;
 }
-DisplayObject.prototype.setupButtonColors = function(setOfColorsIn) {
+//A place to update all colors at once
+// setOfColorsIn should implement all of these own properties
+// individual objects will determine which they need
+DisplayObject.prototype.setupColors = function(setOfColorsIn) {
+
     if(typeof(this.backgroundColor) !== 'undefined'){
-        this.backgroundColor  = 'Green';
+        this.backgroundColor  = setOfColorsIn.backgroundColor;
     }
     if(typeof(this.buttonInactive)  !== 'undefined'){
-        this.buttonInactive   = 'Gainsboro';
+        this.buttonInactive   = setOfColorsIn.buttonInactive;
     }
     if(typeof(this.buttonIdle)      !== 'undefined') {
-        this.buttonIdle       = 'LawnGreen';
+        this.buttonIdle       = setOfColorsIn.buttonIdle;
     }
     if(typeof(this.buttonMouseOver) !== 'undefined') {
-        this.buttonMouseOver  = 'MediumSpringGreen';
+        this.buttonMouseOver  = setOfColorsIn.buttonMouseOver;
     }
     if(typeof(this.buttonClick)     !== 'undefined') {
-        this.buttonClick      = 'LawnGreen';
+        this.buttonClick      = setOfColorsIn.buttonClick;
+    }
+    if(typeof(this.oneColor)       !== 'undefined') {
+        this.oneColor         = setOfColorsIn.oneColor;
+    }
+    if(typeof(this.twoColor)       !== 'undefined') {
+        this.twoColor         = setOfColorsIn.twoColor;
     }
 }
+DisplayObject.prototype.setContainerPosition = function( sizeX, sizeY, posX, posY ) {
+    this.container.width      = sizeX;
+    this.container.height     = sizeY;
+    this.container.style.left = posX;
+    this.container.style.top  = posY;
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -562,6 +574,10 @@ function StatusDisplay(posX, posY, sizeX, sizeY) {
     DisplayObject.call(this, posX, posY, sizeX, sizeY, 'div');
     this.oneColor = "#ffffff"; //set on change event. let viewcontrol handle it
     this.twoColor = "#00ff00";
+    this.tableObject = document.createElement('table');
+    this.table.style.position = 'absolute';
+    this.table.style.left     = '0px';
+    this.table.style.top      = '0px';
 }
 
 StatusDisplay.prototype = Object.create(DisplayObject.prototype, {
@@ -572,19 +588,83 @@ StatusDisplay.prototype = Object.create(DisplayObject.prototype, {
                                             writeable:    true
                                             };
                                         });
-StatusDisplay.prototype.render = function( statusState ) {
-    var playerOne = this.getDivAsButton()
+StatusDisplay.prototype.render = function( posX, posY, sizeX, sizeY, statusState ) {
+    this.setContainerPosition(posX, posY, sizeX, sizeY).bind(this);
+
+    var playerOne = this.getDivAsButton('playerOne', "", this.oneColor, 
+                        this.container.width / 2, this.container.height,
+                        0,0, this.buttonOnClick, this.buttonOnMouseOver, 
+                        this.buttonOnMouseLeave, this.buttonOnMouseUp);
+    var playerTwo = this.getDivAsButton('playertwo', "", this.twoColor,
+                        this.container.width / 2, this.container.height,
+                        this.container.width / 2, 0, this.buttonOnClick,
+                        this.buttonOnMouseOver, this.buttonOnmouseLeave,
+                        this.buttonOnMouseUp);
+    //overlay a table of status vars with click through;
+
+
+    this.table.style.width    = this.container.style.width;
+    this.table.style.height   = this.container.style.height;
+
+
+
+
 }
 StatusDisplay.prototype.setColors = function( playerOne, playerTwo) {
     this.oneColor = playerOne;
     this.twoColor = playerTwo;
 }
-StatusDisplay.prototype.onMouseOver = function( evt ) {
+StatusDisplay.prototype.buttonOnMouseOver = function( evt ) {
+    evt.currentTarget.background = this.buttonMouseOver;
+}
+StatusDisplay.prototype.buttonOnMouseLeave = function( evt ) {
+    if( evt.currentTarget.style.left == 0) {
+        evt.currentTarget.backgroundColor = this.oneColor;
+    } else {
+        evt.currentTarget.backgroundColor = this.twoColor;
+    }
+}
+StatusDisplay.prototype.buttonOnMouseUp    = function( evt ) {
+    this.buttonOnMouseLeave( evt ).bind(this);
+}
+StatusDisplay.prototype.buttonOnClick      = function( evt ) {
+    evt.currentTarget.backgroundColor = this.buttonClick;
+
+    //@todo emit event to trigger between chat/color picker view
+}
 
 
-    this.backgroundColor  = 'Green';
-    this.buttonInactive   = 'Gainsboro';
-    this.buttonIdle       = 'LawnGreen';
-    this.buttonMouseOver  = 'MediumSpringGreen';
-    this.buttonClick      = 'LawnGreen';
+
+function HeaderDisplay(sizeX, sizeY, posX posY, headerString) {
+    DisplayObject.call(sizeX, sizeY, posX, posY, 'div');
+    this.displayString = headerString;
+    this.fontFamily    = "Arial";
+}
+HeaderDisplay.prototype = Object.create(DisplayObject.prototype, {
+                                        constructor: {
+                                            configurable: true,
+                                            enumerable:   true,
+                                            value:        HeaderDisplay,
+                                            writeable:    true
+                                            };
+                                        });
+HeaderDisplay.prototype.render = function( posX, posY, sizeX, sizeY) {
+    this.setContainerPosition(posX, posY, sizeX, sizeY).bind(this);
+    var fontSize = Math.floor(.75 * sizeY);
+    var fontPosY = (sizeY - fontSize) / 2;
+    //@todo, I'm not in love with this, would prefer to see it somewhere
+    //  closer to the left of the view
+    var fontPosX = (sizeX - (this.displayString.length * .6 * fontSize) ) / 2;
+    var dispP    = document.createElement('p');
+        dispP.id = "gameHeading";
+        dispP.style.position = 'absolute';
+        dispP.style.left     = fontPosX + 'px';
+        dispP.style.top      = fontPosY + 'px';
+        dispP.style.font     = fontSize + 'px ' + this.fontFamily;
+}
+HeaderDisplay.prototype.setHeaderString = function( stringIn ) {
+    this.displayString = stringIn;
+}
+HeaderDisplay.prototype.setFontFamily   = function(familyString) {
+    this.fontFamily = familyString;
 }
