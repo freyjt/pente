@@ -229,7 +229,11 @@ function DisplayObject( posX, posY, sizeX, sizeY, container ) {
     this.height = sizeY;
     this.width  = sizeX;
     this.container = document.createElement.(container);
-
+    this.container.style.position = 'absolute';
+    this.container.style.left     = this.left;
+    this.container.style.top      = this.top;
+    this.container.height         = this.height;
+    this.container.width          = this.width;
     this.bgColor      = 'Beige';
 }
 DisplayObject.prototype.getMousePosition = function( event ) {
@@ -661,6 +665,8 @@ HeaderDisplay.prototype.render = function( posX, posY, sizeX, sizeY) {
         dispP.style.left     = fontPosX + 'px';
         dispP.style.top      = fontPosY + 'px';
         dispP.style.font     = fontSize + 'px ' + this.fontFamily;
+    this.container.innerHTML = "";
+    this.container.appendChild(dispP);
 }
 HeaderDisplay.prototype.setHeaderString = function( stringIn ) {
     this.displayString = stringIn;
